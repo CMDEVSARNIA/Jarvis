@@ -120,10 +120,10 @@ table([
 H2("Pick your path")
 table([
     ["", "Path A: Cloud server", "Path B: Home PC"],
-    ["When", "Now, from your phone", "When you have a PC"],
+    ["When", "Now, set up from a laptop", "When you have a PC to leave on"],
     ["You get", "Telegram + phone calls, always on", "Everything, including the HUD with voice and PC control"],
     ["Hosting cost", "About $0-4 per month", "$0 (it uses your PC)"],
-    ["Hardest part", "Creating the server from a phone browser", "Nothing; double-click an installer"],
+    ["Hardest part", "Clicking through Google's cloud console", "Nothing; double-click an installer"],
 ], [1.3, 2.8, 2.8])
 tip("Start with <b>Path A, Telegram only</b>. It's the cheapest way to have a working Jarvis today. Add phone "
     "calls once you're happy, and move to Path B when you have a PC. Your settings carry over.",
@@ -137,7 +137,7 @@ table([
      "A short back-and-forth on Sonnet is typically well under a cent. Prepaid credit; you set a monthly limit."],
     ["Telegram", "Free", ""],
     ["Cloud server", "$0-4 / month", "Google Cloud's e2-micro VM is free, but Google bills its public IP "
-     "(about $0.005/hour, roughly $3.65/month). Oracle Cloud's Always Free tier is $0 but harder to set up."],
+     "(about $0.005/hour, roughly $3.65/month). Oracle's Always Free tier is $0, but it stops servers that sit idle for a week, which Jarvis usually does."],
     ["Twilio (calls)", "$1.15 / month + per minute", "Local US number $1.15/month; outbound US calls about "
      "$0.013-0.014/minute, plus speech-recognition fees. New accounts get trial credit."],
     ["ngrok (tunnel)", "Free", "Free plan includes one fixed web address, which is all Jarvis needs."],
@@ -178,13 +178,15 @@ keep_from(_k)
 
 # ======================================================================= path A
 H1("Path A: Run Jarvis on a cloud server")
-P("These steps use Google Cloud because its <b>SSH</b> button opens a terminal right in your browser, "
-  "which works from a phone. Turn on <b>Desktop site</b> in your phone browser's menu: the console is "
-  "much easier to use that way.")
+P("These steps use Google Cloud from a web browser. A <b>Windows laptop</b> is ideal: you install nothing "
+  "on it, because Google's <b>SSH</b> button opens a terminal in a browser window. (From a phone, turn on "
+  "<b>Desktop site</b> in the browser menu.) Google's screens change from time to time, so button names "
+  "may differ slightly.")
 
 H2("A1. Create the account and a budget alert")
 steps([
-    "Go to <b>console.cloud.google.com</b> and sign up. A card is required for verification.",
+    "Go to <b>console.cloud.google.com</b> and sign up. A card is required for verification. New accounts "
+    "usually get free trial credit, which covers the first months.",
     "Open <b>Billing &gt; Budgets &amp; alerts &gt; Create budget</b>. Set it to <b>$5</b> so you're "
     "emailed if anything costs more than expected.",
 ])
@@ -200,7 +202,8 @@ steps([
 ])
 
 H2("A3. Install Jarvis")
-P("Press the <b>SSH</b> button next to your VM. A terminal opens. Type (or paste) these lines one at a time:")
+P("Press the <b>SSH</b> button next to your VM and click <b>Authorize</b>. A terminal window opens. Paste "
+  "these lines one at a time (Ctrl+V, or right-click &gt; Paste), pressing Enter after each:")
 code("""
 git clone https://github.com/cmdevsarnia/jarvis.git
 cd jarvis
@@ -231,11 +234,14 @@ P("Jarvis now starts automatically whenever the server boots. You can close the 
   "<font name='Courier'>journalctl -u jarvis -n 50</font> (last 50 log lines).", small)
 
 H2("Free alternative: Oracle Cloud")
-P("Oracle's <b>Always Free</b> tier includes a VM <i>and</i> its public IP at $0. Create an Ubuntu instance "
-  "(shape VM.Standard.E2.1.Micro or Ampere A1), connect with its <b>Cloud Shell</b> or the <b>Termius</b> app "
-  "using the SSH key Oracle gives you, then follow A3-A5 exactly as written.")
+P("Oracle's <b>Always Free</b> tier includes a VM <i>and</i> its public IP at $0, but free accounts have "
+  "servers <b>stopped if they stay idle for 7 days</b>. Jarvis is idle most of the time, so you'd need to "
+  "upgrade to Pay As You Go (free resources stay free, but you can be billed for anything beyond them). "
+  "If you try it: create an Ubuntu instance (shape VM.Standard.E2.1.Micro), connect with its <b>Cloud Shell</b>, "
+  "then follow A3-A5 exactly as written.")
 
 # ======================================================================= path B
+story.append(PageBreak())
 H1("Path B: Run Jarvis on a Windows PC")
 steps([
     "Install <b>Python 3.12 or newer</b> from python.org. On the first installer screen, tick "
