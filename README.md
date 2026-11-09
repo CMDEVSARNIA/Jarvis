@@ -27,16 +27,25 @@ remembered at the desk.
 There is deliberately **no** arbitrary shell/command tool. Anything that can reach your phone
 can drive these tools, so each one is narrow. Add new ones in `jarvis/tools.py`.
 
+**Full step-by-step guide (PC, cloud server, Telegram, phone calls): [docs/Jarvis-Setup-Guide.pdf](docs/Jarvis-Setup-Guide.pdf)**
+
 ## Setup (Windows)
 
 1. Install Python 3.10+ from python.org (tick "Add to PATH").
 2. Get an API key at <https://platform.claude.com>. This is billed separately from a claude.ai subscription.
-3. Double-click `start-jarvis.bat`. First run creates `.env` and opens it; paste your key, save, run it again.
+3. Double-click `start-jarvis.bat`. The first run installs everything and asks for your settings.
+   Change them later with `.venv\Scripts\python -m jarvis.configure`.
 4. The HUD opens in your browser. Use **Edge** for the best built-in voice ("Microsoft Ryan" is the
    closest to the films). Hold **Space** or click **MIC** to talk.
 
 Mac/Linux: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && cp .env.example .env`,
 then `.venv/bin/python -m jarvis`.
+
+### No PC? Run it on a cloud server
+
+On a fresh Ubuntu VM: `git clone` this repo, then `bash deploy/setup-server.sh`,
+`.venv/bin/python -m jarvis.configure`, `sudo systemctl restart jarvis`. For phone calls,
+`bash deploy/setup-ngrok.sh` keeps a tunnel up. The HUD and PC-control tools don't apply on a server.
 
 ### Phone chat (Telegram)
 

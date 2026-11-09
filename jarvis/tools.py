@@ -29,9 +29,17 @@ def _schema(props: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _web_search_tool() -> list[dict[str, Any]]:
+    """Server-side web search (runs on Anthropic's side, no handler needed).
+    This version is supported on Opus and Sonnet models; it's left off for
+    others (e.g. Haiku) rather than risk every request being rejected."""
+    if settings.model.startswith(("claude-opus", "claude-sonnet", "claude-fable")):
+        return [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}]
+    return []
+
+
 TOOLS: list[dict[str, Any]] = [
-    # Server-side tool: runs on Anthropic's side, no handler needed here.
-    {"type": "web_search_20260209", "name": "web_search", "max_uses": 3},
+    *_web_search_tool(),
     {
         "name": "system_status",
         "description": "Report this PC's CPU, memory, disk and battery status.",

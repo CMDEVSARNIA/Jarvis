@@ -1,0 +1,14 @@
+[Unit]
+Description=J.A.R.V.I.S. assistant
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=__USER__
+WorkingDirectory=__DIR__
+ExecStart=__DIR__/.venv/bin/python -m jarvis --no-browser
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
