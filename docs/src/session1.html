@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Jarvis Session 1: Telegram on the cloud</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap">
+<style>
+  @page { size: letter; margin: 0; }
+  :root {
+    --bg: #03101a; --deep: #02070d; --card: #071b29; --line: #1d4a63; --rule: #12334a;
+    --cyan: #4fd1ff; --cyan-soft: #9be4ff; --amber: #ffb547; --amber-line: #6b4a17;
+    --text: #d6f1ff; --muted: #8db3c7; --white: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--deep); }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page {
+    width: 8.5in; height: 11in; padding: 0.6in 0.65in 0.55in; position: relative; overflow: hidden;
+    background: var(--bg); page-break-after: always; display: flex; flex-direction: column;
+  }
+  .page:last-child { page-break-after: auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 22px; }
+  .brand { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .32em; color: var(--cyan); font-size: 15px; }
+  .crumb { font-size: 11px; letter-spacing: .18em; color: var(--muted); }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .14em; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--rule); }
+  h1 { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .14em; color: var(--cyan); font-size: 34px; margin: 0 0 4px; text-transform: uppercase; }
+  h2 { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .16em; color: var(--white); font-size: 17px; margin: 18px 0 8px; text-transform: uppercase; }
+  .lead { color: var(--muted); font-size: 13.5px; line-height: 1.55; margin: 0 0 16px; max-width: 6.4in; }
+  p { font-size: 12.5px; line-height: 1.55; margin: 0 0 8px; }
+  b, strong { color: var(--white); font-weight: 600; }
+  .chip { display: inline-block; font-family: Rajdhani, sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .26em; padding: 4px 12px; border: 1px solid var(--cyan); border-radius: 999px; color: var(--cyan); }
+  .chip.amber { border-color: var(--amber); color: var(--amber); }
+  .page > .chip { align-self: flex-start; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  .steps li { display: grid; grid-template-columns: 22px 30px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; }
+  .box { width: 16px; height: 16px; border: 1.5px solid var(--cyan); border-radius: 4px; margin-top: 2px; }
+  .num { font-family: Rajdhani, sans-serif; font-weight: 700; color: var(--cyan); font-size: 17px; line-height: 1.2; }
+  .steps li .sub { color: var(--muted); font-size: 11.5px; display: block; margin-top: 3px; }
+
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11.5px; color: var(--cyan-soft); }
+  .term { background: var(--deep); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 8px 0 4px; }
+  .term .bar { display: flex; gap: 6px; margin-bottom: 9px; }
+  .term .bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .term pre { margin: 0; font-family: "JetBrains Mono", monospace; font-size: 12px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+  .term pre .p { color: var(--cyan); }
+  .term pre .c { color: var(--muted); }
+
+  .callout { border: 1px solid var(--amber-line); background: rgba(255,181,71,0.07); border-radius: 12px; padding: 11px 14px; margin: 12px 0; font-size: 12px; line-height: 1.5; }
+  .callout .t { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .2em; color: var(--amber); font-size: 12.5px; display: block; margin-bottom: 3px; }
+  .callout.info { border-color: var(--line); background: rgba(79,209,255,0.06); }
+  .callout.info .t { color: var(--cyan); }
+
+  .check { margin-top: 14px; display: flex; gap: 14px; align-items: center; border: 1.5px solid var(--cyan); border-radius: 14px; padding: 12px 16px; background: rgba(79,209,255,0.07); }
+  .check svg { flex: none; }
+  .check .t { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .22em; color: var(--cyan); font-size: 13px; }
+  .check p { margin: 2px 0 0; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+  .card h3 { margin: 0 0 6px; font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .16em; font-size: 13.5px; color: var(--cyan); text-transform: uppercase; }
+  .card p, .card li { font-size: 12px; }
+  .card ul { margin: 0; padding-left: 16px; line-height: 1.6; }
+
+  .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .table th, .table td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.45; }
+  .table th { background: var(--card); color: var(--muted); font-weight: 600; font-size: 10.5px; letter-spacing: .16em; }
+  .table tr:last-child td { border-bottom: none; }
+  .compact .table th, .compact .table td { padding: 6px 12px; }
+  .compact .term pre { line-height: 1.6; }
+  .compact .steps li { padding: 8px 12px; }
+  .compact .callout { margin: 9px 0; padding: 9px 14px; }
+  .compact .lead { margin-bottom: 10px; }
+  .compact h1 { font-size: 30px; }
+  .compact .check { margin-top: 8px; padding: 8px 14px; }
+  .compact .topbar { margin-bottom: 14px; }
+  .compact .term { margin: 4px 0 2px; padding: 10px 14px; }
+  .compact .steps { gap: 7px; }
+  .table td:first-child { color: var(--white); font-weight: 600; width: 34%; }
+
+  /* cover */
+  .cover { justify-content: flex-start; }
+  .reactor { display: flex; justify-content: center; margin: 18px 0 10px; }
+  .cover h1 { font-size: 46px; text-align: center; letter-spacing: .3em; margin-top: 4px; }
+  .cover .sub { text-align: center; color: var(--muted); font-size: 15px; margin: 0 0 18px; letter-spacing: .04em; }
+  .timeline { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 8px; }
+  .timeline .card { padding: 12px; }
+  .timeline .n { font-family: Rajdhani, sans-serif; font-weight: 700; color: var(--cyan); font-size: 26px; line-height: 1; }
+  .timeline .k { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .14em; color: var(--white); font-size: 13px; margin: 6px 0 4px; text-transform: uppercase; }
+  .timeline .d { font-size: 11px; color: var(--muted); line-height: 1.45; }
+  .timeline .m { font-size: 10.5px; color: var(--cyan-soft); margin-top: 6px; letter-spacing: .08em; }
+  .notepad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .field { border: 1px dashed var(--line); border-radius: 10px; padding: 9px 12px; font-size: 11px; color: var(--muted); letter-spacing: .06em; height: 50px; }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ COVER -->
+<section class="page cover">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">SETUP · SESSION 1 OF 2</span></div>
+
+  <div class="reactor">
+    <svg width="210" height="210" viewBox="0 0 270 270" aria-hidden="true">
+      <circle cx="135" cy="135" r="128" fill="none" stroke="#4fd1ff" stroke-opacity="0.35" stroke-width="6" stroke-dasharray="1 7.4"/>
+      <circle cx="135" cy="135" r="112" fill="none" stroke="#4fd1ff" stroke-width="3" stroke-dasharray="150 85" stroke-linecap="round" transform="rotate(-30 135 135)"/>
+      <circle cx="135" cy="135" r="92" fill="none" stroke="#4fd1ff" stroke-opacity="0.45" stroke-width="8" stroke-dasharray="20 9"/>
+      <circle cx="135" cy="135" r="76" fill="none" stroke="#4fd1ff" stroke-opacity="0.8" stroke-width="1.5" stroke-dasharray="90 40"/>
+      <circle cx="135" cy="135" r="58" fill="none" stroke="#4fd1ff" stroke-opacity="0.6" stroke-width="1.5"/>
+      <circle cx="135" cy="135" r="40" fill="#4fd1ff" fill-opacity="0.18"/>
+      <circle cx="135" cy="135" r="26" fill="#4fd1ff" fill-opacity="0.55"/>
+      <circle cx="135" cy="135" r="12" fill="#ffffff"/>
+    </svg>
+  </div>
+
+  <h1>J.A.R.V.I.S.</h1>
+  <p class="sub">Session 1 · Get Jarvis running on a cloud server and talking to you on Telegram</p>
+  <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 20px">
+    <span class="chip">≈ 45–60 MIN</span><span class="chip">WINDOWS LAPTOP</span><span class="chip amber">≈ $4 / MONTH</span>
+  </div>
+
+  <div class="timeline">
+    <div class="card"><div class="n">01</div><div class="k">Keys</div><div class="d">New Claude key, spend limit, Telegram bot</div><div class="m">10 MIN</div></div>
+    <div class="card"><div class="n">02</div><div class="k">Server</div><div class="d">A small always-on Google Cloud machine</div><div class="m">15 MIN</div></div>
+    <div class="card"><div class="n">03</div><div class="k">Install</div><div class="d">Download Jarvis and enter your settings</div><div class="m">10 MIN</div></div>
+    <div class="card"><div class="n">04</div><div class="k">Connect</div><div class="d">Link Telegram and send the first message</div><div class="m">5 MIN</div></div>
+  </div>
+
+  <h2>Have ready</h2>
+  <div class="grid2">
+    <div class="card"><ul>
+      <li>Windows laptop with Chrome or Edge</li>
+      <li>Your Android phone with Telegram</li>
+      <li>A payment card (Google verifies with it)</li>
+    </ul></div>
+    <div class="card"><ul>
+      <li>Notepad open, to hold keys temporarily</li>
+      <li>Your Claude Console login (credit already added)</li>
+      <li>About an hour without interruptions</li>
+    </ul></div>
+  </div>
+
+  <div class="callout"><span class="t">GOLDEN RULE</span>Keys and tokens only ever go into Jarvis's settings tool. Never into a chat (including with Claude), an email, or GitHub. Anything pasted into a chat should be treated as public.</div>
+
+  <div class="foot"><span>SESSION 1 · OVERVIEW</span><span>01</span></div>
+</section>
+
+<!-- ================================================================ PART 1 -->
+<section class="page">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">PART 01 · KEYS</span></div>
+  <span class="chip">PART 01</span>
+  <h1 style="margin-top:10px">Keys</h1>
+  <p class="lead">Three things Jarvis needs to work: a fresh Claude API key, a spending cap, and a Telegram bot. All done in your browser and on your phone.</p>
+
+  <h2>A · Claude API key</h2>
+  <ol class="steps">
+    <li><span class="box"></span><span class="num">1</span><span>Open <b>platform.claude.com</b> and sign in.</span></li>
+    <li><span class="box"></span><span class="num">2</span><span>Go to <b>API Keys</b>. <b>Delete the key you pasted into the chat earlier.</b><span class="sub">It's in a chat transcript now, so it has to be treated as compromised.</span></span></li>
+    <li><span class="box"></span><span class="num">3</span><span>Click <b>Create Key</b>, name it <code>jarvis</code>, and copy it into Notepad.<span class="sub">It starts with <code>sk-ant-api</code>. You can only see it once.</span></span></li>
+    <li><span class="box"></span><span class="num">4</span><span>Open <b>Limits</b> and set a <b>monthly spend limit</b>, e.g. $10.<span class="sub">Jarvis runs unattended; this is your safety net.</span></span></li>
+  </ol>
+
+  <h2>B · Telegram bot (on your phone)</h2>
+  <ol class="steps">
+    <li><span class="box"></span><span class="num">5</span><span>In Telegram, search <b>@BotFather</b> (blue check mark) and open the chat.</span></li>
+    <li><span class="box"></span><span class="num">6</span><span>Send <code>/newbot</code>. Name it <b>Jarvis</b>, then pick a username ending in <b>bot</b>.<span class="sub">e.g. <code>yourname_jarvis_bot</code>. It has to be unique on Telegram.</span></span></li>
+    <li><span class="box"></span><span class="num">7</span><span>BotFather replies with a <b>token</b> like <code>123456789:AAF…</code>. Copy it into Notepad.<span class="sub">Telegram Desktop on the laptop makes copying easier, but the phone works too.</span></span></li>
+  </ol>
+
+  <h2>Your notepad</h2>
+  <div class="notepad">
+    <div class="field">CLAUDE KEY · sk-ant-api…  (paste into Notepad, not here)</div>
+    <div class="field">TELEGRAM TOKEN · 123456789:AAF…</div>
+  </div>
+
+  <div class="check">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fd1ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+    <div><span class="t">CHECKPOINT</span><p>Notepad holds two things: a new Claude key and a Telegram token. The old key is deleted.</p></div>
+  </div>
+  <div class="foot"><span>SESSION 1 · KEYS</span><span>02</span></div>
+</section>
+
+<!-- ================================================================ PART 2 -->
+<section class="page">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">PART 02 · SERVER</span></div>
+  <span class="chip">PART 02</span>
+  <h1 style="margin-top:10px">Server</h1>
+  <p class="lead">A small Google Cloud machine that stays on 24/7 so Jarvis is always reachable. The machine itself is free tier; Google charges about $3.65/month for its public address. Google's screens change now and then, so labels may differ slightly.</p>
+
+  <h2>A · Account and budget alert</h2>
+  <ol class="steps">
+    <li><span class="box"></span><span class="num">1</span><span>Go to <b>console.cloud.google.com</b> and sign up. Add your card when asked.<span class="sub">New accounts usually get free trial credit that covers the first months.</span></span></li>
+    <li><span class="box"></span><span class="num">2</span><span>Open <b>Billing → Budgets &amp; alerts → Create budget</b>. Set <b>$5</b> and keep the email alerts on.</span></li>
+  </ol>
+
+  <h2>B · Create the machine</h2>
+  <ol class="steps">
+    <li><span class="box"></span><span class="num">3</span><span>Go to <b>Compute Engine → VM instances</b>. Click <b>Enable</b> if asked (takes a minute), then <b>Create instance</b>.</span></li>
+    <li><span class="box"></span><span class="num">4</span><span><b>Name:</b> <code>jarvis</code> · <b>Region:</b> <code>us-central1</code> (or <code>us-east1</code> / <code>us-west1</code>).<span class="sub">Only these three regions are in the free tier.</span></span></li>
+    <li><span class="box"></span><span class="num">5</span><span><b>Machine type:</b> series E2, <code>e2-micro</code>.</span></li>
+    <li><span class="box"></span><span class="num">6</span><span><b>Boot disk → Change</b> (may be under <i>OS and storage</i>): <b>Ubuntu</b>, <b>Ubuntu 24.04 LTS</b>, disk type <b>Standard persistent disk</b>, size <b>30 GB</b>. Click <b>Select</b>.</span></li>
+    <li><span class="box"></span><span class="num">7</span><span>Leave everything else as it is. Click <b>Create</b> and wait for the green check mark.</span></li>
+  </ol>
+
+  <div class="callout"><span class="t">THE ONE SETTING THAT COSTS MONEY</span>The default disk type is <b>Balanced</b>, which is <i>not</i> free. Make sure step 6 says <b>Standard persistent disk</b> before you click Create.</div>
+
+  <div class="check">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fd1ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+    <div><span class="t">CHECKPOINT</span><p>The VM list shows <b>jarvis</b> with a green check mark and an <b>SSH</b> button next to it.</p></div>
+  </div>
+  <div class="foot"><span>SESSION 1 · SERVER</span><span>03</span></div>
+</section>
+
+<!-- ================================================================ PART 3 + 4 -->
+<section class="page compact">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">PART 03–04 · INSTALL &amp; CONNECT</span></div>
+  <span class="chip">PART 03</span>
+  <h1 style="margin-top:10px">Install</h1>
+  <p class="lead">Click <b>SSH</b> next to your VM, then <b>Authorize</b>. In the terminal, paste each line (<b>Ctrl+V</b> or right-click → Paste), press <b>Enter</b>, and let it finish.</p>
+
+  <div class="term"><div class="bar"><i></i><i></i><i></i></div><pre><span class="p">$</span> git clone https://github.com/cmdevsarnia/jarvis.git
+<span class="p">$</span> cd jarvis
+<span class="p">$</span> bash deploy/setup-server.sh            <span class="c"># 2–4 minutes</span>
+<span class="p">$</span> .venv/bin/python -m jarvis.configure   <span class="c"># answers below</span>
+<span class="p">$</span> sudo systemctl restart jarvis</pre></div>
+
+  <table class="table" style="margin-top:12px">
+    <tr><th>THE SETTINGS TOOL ASKS</th><th>YOU ANSWER</th></tr>
+    <tr><td>Anthropic API key</td><td>Paste from Notepad. <b>Nothing appears</b> while you paste; that's normal.</td></tr>
+    <tr><td>Which model?</td><td><code>1</code> for Sonnet 5.5, the lower-cost choice.</td></tr>
+    <tr><td>What should Jarvis call you</td><td>Your name, or "sir".</td></tr>
+    <tr><td>Bot token</td><td>Paste the Telegram token (also hidden).</td></tr>
+    <tr><td>Your chat id</td><td>Leave blank for now. Press Enter.</td></tr>
+    <tr><td>Set up phone calls now?</td><td><code>N</code>. That's Session 2.</td></tr>
+  </table>
+
+  <div class="callout info"><span class="t">IF GIT ASKS FOR A PASSWORD</span>Your repository is private. Make it public (repo → Settings → Change visibility; it holds no keys) or use a GitHub personal access token as the password.</div>
+
+  <h2 style="margin-top:4px"><span class="chip" style="margin-right:10px; vertical-align: 2px">PART 04</span>Connect Telegram</h2>
+  <ol class="steps">
+    <li><span class="box"></span><span class="num">1</span><span>On your phone, message your bot <b>hello</b>. It replies <b>"Your chat id is …"</b></span></li>
+    <li><span class="box"></span><span class="num">2</span><span>In the SSH window, run <code>.venv/bin/python -m jarvis.configure</code> again. Press Enter to keep each answer until <b>chat id</b>, then paste it.</span></li>
+    <li><span class="box"></span><span class="num">3</span><span>Run <code>sudo systemctl restart jarvis</code>.</span></li>
+  </ol>
+
+  <div class="check">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fd1ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+    <div><span class="t">SESSION 1 COMPLETE</span><p>Text the bot <i>"What's the server's CPU load?"</i> and get a reply. Jarvis now runs 24/7; you can close the laptop.</p></div>
+  </div>
+  <div class="foot"><span>SESSION 1 · INSTALL &amp; CONNECT</span><span>04</span></div>
+</section>
+
+<!-- ================================================================ TROUBLESHOOTING -->
+<section class="page">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">IF SOMETHING GOES WRONG</span></div>
+  <span class="chip amber">DIAGNOSTICS</span>
+  <h1 style="margin-top:10px">Troubleshooting</h1>
+  <p class="lead">Most problems show up in the logs. In the SSH window, <code>journalctl -u jarvis -n 50</code> prints the last 50 lines.</p>
+
+  <table class="table">
+    <tr><th>SYMPTOM</th><th>FIX</th></tr>
+    <tr><td>Bot never replies</td><td>Run <code>systemctl status jarvis</code>; it should say <b>active (running)</b>. If not, read the logs. Check the bot token is correct.</td></tr>
+    <tr><td>Bot keeps replying with your chat id</td><td>The chat id isn't saved yet. Repeat Part 04, steps 2–3.</td></tr>
+    <tr><td>"My API key was rejected"</td><td>The Claude key is wrong or deleted. Create a new one and re-run the settings tool.</td></tr>
+    <tr><td>"I'm being rate limited"</td><td>Check your credit and spend limit at platform.claude.com.</td></tr>
+    <tr><td>Logs say <b>409 Conflict</b></td><td>Another copy of Jarvis is using the same bot. Only one may run per bot token.</td></tr>
+    <tr><td>setup-server.sh stops with an error</td><td>Screenshot the last 20 lines (keys cropped out) and send it to Claude.</td></tr>
+    <tr><td>Google bill higher than expected</td><td>Check the disk type is Standard and the region is one of the three free-tier regions.</td></tr>
+  </table>
+
+  <h2>Everyday commands</h2>
+  <div class="term"><div class="bar"><i></i><i></i><i></i></div><pre><span class="p">$</span> systemctl status jarvis                    <span class="c"># is it running?</span>
+<span class="p">$</span> journalctl -u jarvis -n 50                 <span class="c"># recent logs</span>
+<span class="p">$</span> cd ~/jarvis &amp;&amp; .venv/bin/python -m jarvis.configure   <span class="c"># change settings</span>
+<span class="p">$</span> sudo systemctl restart jarvis              <span class="c"># apply changes</span>
+<span class="p">$</span> cd ~/jarvis &amp;&amp; git pull &amp;&amp; sudo systemctl restart jarvis   <span class="c"># update</span></pre></div>
+  <p style="color:var(--muted); font-size:12px">On Telegram, send <code>/reset</code> to clear the conversation.</p>
+
+  <div class="grid2" style="margin-top:10px">
+    <div class="card"><h3>What it costs</h3><ul>
+      <li>Server: ≈ $3.65/month (public address)</li>
+      <li>Claude: pay per message from your credit</li>
+      <li>Telegram: free</li>
+    </ul></div>
+    <div class="card"><h3>Up next · Session 2</h3><ul>
+      <li>Phone calls: Twilio number + ngrok tunnel</li>
+      <li>Then: the phone web app, email alerts</li>
+      <li>Use Jarvis for a day first</li>
+    </ul></div>
+  </div>
+  <div class="foot"><span>SESSION 1 · TROUBLESHOOTING</span><span>05</span></div>
+</section>
+
+</body>
+</html>
