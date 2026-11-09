@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>J.A.R.V.I.S.</title>
+  <link rel="stylesheet" href="/static/hud.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="brand">J.A.R.V.I.S.<span>Just A Rather Very Intelligent System</span></div>
+    <div class="state" id="state-label">STANDBY</div>
+    <div class="clock"><div id="clock-time">--:--:--</div><div id="clock-date"></div></div>
+  </header>
+
+  <main class="grid">
+    <section class="panel left">
+      <h2>SYSTEM</h2>
+      <div class="meter"><label>CPU</label><div class="bar"><i id="cpu-bar"></i></div><b id="cpu-val">--</b></div>
+      <div class="meter"><label>MEM</label><div class="bar"><i id="mem-bar"></i></div><b id="mem-val">--</b></div>
+
+      <h2>LINKS</h2>
+      <ul class="links">
+        <li><span class="dot" id="link-core"></span>Core <em id="model-name"></em></li>
+        <li><span class="dot" id="link-telegram"></span>Telegram</li>
+        <li><span class="dot" id="link-phone"></span>Phone</li>
+      </ul>
+
+      <h2>ACTIVITY</h2>
+      <ul class="activity" id="activity"></ul>
+    </section>
+
+    <section class="core">
+      <canvas id="reactor" aria-label="Jarvis status visualisation"></canvas>
+      <div class="caption" id="caption"></div>
+    </section>
+
+    <section class="panel right">
+      <h2>TRANSCRIPT</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </main>
+
+  <footer class="controls">
+    <button id="mic" class="round" title="Hold Space or click to talk">MIC</button>
+    <form id="chat-form" autocomplete="off">
+      <input id="chat-input" placeholder="Speak, or type a command..." aria-label="Message Jarvis">
+    </form>
+    <label class="toggle" title="Listen continuously; say 'Jarvis ...' to address him">
+      <input type="checkbox" id="always-listen"> WAKE WORD
+    </label>
+    <label class="toggle"><input type="checkbox" id="voice-on" checked> VOICE</label>
+    <button id="call-me" class="pill" title="Have Jarvis ring your phone">CALL MY PHONE</button>
+    <button id="reset" class="pill ghost" title="Clear conversation">RESET</button>
+  </footer>
+
+  <div class="locked" id="locked" hidden>
+    <p>Access token missing or invalid.</p>
+    <p>Open the HUD link printed in the Jarvis console window.</p>
+  </div>
+
+  <script src="/static/hud.js"></script>
+</body>
+</html>
