@@ -159,6 +159,8 @@ def main() -> None:
     if ws and not ws.startswith("wrkspc_"):
         print("  Warning: workspace IDs start with wrkspc_ - check you copied the ID, not the name.")
     ask(cur, "OWNER_NAME", "What should Jarvis call you", default="sir")
+    ask(cur, "HOME_LOCATION", "Your city, for weather (e.g. Toronto, Canada)")
+    ask(cur, "UNITS", "Units: metric or imperial", default="metric")
 
     section("Telegram (phone chat)")
     ask(cur, "TELEGRAM_BOT_TOKEN", "Bot token from @BotFather (hidden)", secret=True)

@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import events, phone, telegram_bot
+from . import events, phone, reminders, telegram_bot
 from .brain import brain
 from .config import WEB_DIR, settings
 
@@ -22,11 +22,14 @@ log = logging.getLogger("jarvis.server")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    tg = asyncio.create_task(telegram_bot.run())
+    tasks = [asyncio.create_task(telegram_bot.run()),
+             asyncio.create_task(reminders.run_scheduler())]
     yield
-    tg.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await tg
+    for task in tasks:
+        task.cancel()
+    for task in tasks:
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
 
 app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)

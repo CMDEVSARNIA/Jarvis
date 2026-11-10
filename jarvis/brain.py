@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
 from typing import Any
 
 import anthropic
 
 from . import events
-from .config import claude_headers, settings
+from .config import claude_headers, local_now, settings
 from .tools import TOOLS, load_memory, run_tool
 
 log = logging.getLogger("jarvis.brain")
@@ -30,7 +29,9 @@ you how your reply will be delivered:
   conversational, no markdown, no lists, no URLs read out character by character.
 - "telegram": your reply is a text message. Brief, plain text, light formatting at most.
 
-You can act on the PC and reach the owner by phone through your tools. Confirm before anything
+You can act on the PC and reach the owner by phone through your tools. Use get_weather for
+weather rather than web search. To read a web page, use web_fetch on its URL. If a web tool
+returns an error, tell the owner which error it was. Confirm before anything
 irreversible. You cannot place calls to anyone except the owner. If a tool fails, say so plainly.
 """
 
@@ -55,7 +56,7 @@ class Brain:
             if self._history_chars() > MAX_HISTORY_CHARS:
                 await self._fold_history()
 
-            stamp = datetime.now().strftime("%a %d %b %Y %H:%M")
+            stamp = local_now().strftime("%a %d %b %Y %H:%M")
             content = f"[via {channel} | {stamp}] {text}"
             if not self.messages:
                 content = self._preamble() + content

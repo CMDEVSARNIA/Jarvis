@@ -6,3 +6,4 @@ twilio>=9.0
 python-dotenv>=1.0
 psutil>=6.0
 python-multipart>=0.0.9
+tzdata>=2024.1  # time zones on Windows

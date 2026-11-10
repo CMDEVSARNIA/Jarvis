@@ -284,6 +284,14 @@
       case "state":
         if (ev.state === "thinking" || (ev.state === "idle" && state === "thinking")) setState(ev.state, false);
         break;
+      case "reminder":
+        addMsg("jarvis", ev.text, "reminder");
+        addActivity(`<b>REMINDER</b> ${esc(ev.text)}`);
+        speak(ev.text);
+        break;
+      case "activity":
+        addActivity(`<b>${esc(ev.label)}</b> ${esc(ev.text)}`);
+        break;
       case "call":
         addActivity(`<b>PHONE</b> ${esc(ev.status)}`);
         break;

@@ -48,6 +48,9 @@ class Settings:
     model: str = _env("JARVIS_MODEL", "claude-opus-5-5")
     effort: str = _env("JARVIS_EFFORT", "low")
     owner_name: str = _env("OWNER_NAME", "sir")
+    home_location: str = _env("HOME_LOCATION")          # e.g. "Toronto, Canada"
+    units: str = _env("UNITS", "metric").lower()        # metric | imperial
+    timezone: str = _env("JARVIS_TIMEZONE")             # e.g. America/Toronto; blank = this computer's
     # Needed only for a personal/service-account key that isn't scoped to one workspace.
     workspace_id: str = _env("ANTHROPIC_WORKSPACE_ID")
 
@@ -121,6 +124,16 @@ def valid_anthropic_key(value: str) -> bool:
 def valid_telegram_token(value: str) -> bool:
     import re
     return bool(re.fullmatch(r"\d{5,}:[A-Za-z0-9_-]{30,}", value))
+
+
+def local_now():
+    """The owner's local time (naive datetime). Uses JARVIS_TIMEZONE when set, which
+    matters on a cloud server whose clock runs in UTC."""
+    from datetime import datetime
+    if settings.timezone:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo(settings.timezone)).replace(tzinfo=None)
+    return datetime.now()
 
 
 def claude_headers() -> dict[str, str] | None:

@@ -16,7 +16,11 @@ remembered at the desk.
 
 ## What it can do (tools)
 
-- `web_search`: look things up
+- `web_search`, `web_fetch`: look things up and read web pages (Opus/Sonnet models)
+- `get_weather`, `get_time`: weather and world time (free Open-Meteo service, no key)
+- `set_reminder`, `set_timer`, `list_reminders`, `cancel_reminder`: reminders are spoken on the
+  PC and sent to Telegram; ones missed while Jarvis was off arrive late, marked as such
+- `add_to_list`, `show_list`, `remove_from_list`: to-do, shopping and any other lists
 - `system_status`: CPU / memory / disk / battery
 - `open_website`: open a URL on the PC
 - `launch_app`: start apps **from an allowlist** in `config/apps.json`

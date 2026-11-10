@@ -15,6 +15,7 @@ from typing import Any, Awaitable, Callable
 
 import psutil
 
+from . import reminders, weather
 from .config import DATA_DIR, settings
 
 MEMORY_FILE = DATA_DIR / "memory.json"
@@ -29,17 +30,84 @@ def _schema(props: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _web_search_tool() -> list[dict[str, Any]]:
-    """Server-side web search (runs on Anthropic's side, no handler needed).
-    This version is supported on Opus and Sonnet models; it's left off for
-    others (e.g. Haiku) rather than risk every request being rejected."""
+def _web_tools() -> list[dict[str, Any]]:
+    """Server-side web search and page reading (run on Anthropic's side, no handler
+    needed). These versions are supported on Opus and Sonnet models; they're left
+    off for others (e.g. Haiku) rather than risk every request being rejected."""
     if settings.model.startswith(("claude-opus", "claude-sonnet", "claude-fable")):
-        return [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}]
+        return [
+            {"type": "web_search_20260209", "name": "web_search", "max_uses": 5},
+            # Reads pages whose URLs are already in the conversation (pasted or found by search).
+            {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 5,
+             "max_content_tokens": 20000},
+        ]
     return []
 
 
 TOOLS: list[dict[str, Any]] = [
-    *_web_search_tool(),
+    *_web_tools(),
+    {
+        "name": "get_weather",
+        "description": "Current weather and a 3-day forecast. Empty location = the owner's home.",
+        "input_schema": _schema({"location": {"type": "string",
+                                              "description": "City, optionally with country, e.g. 'Paris, France'. Empty for home."}}),
+        "strict": True,
+    },
+    {
+        "name": "get_time",
+        "description": "The current local time in a city. Empty location = the owner's home.",
+        "input_schema": _schema({"location": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "set_reminder",
+        "description": (
+            "Remind the owner at a specific time (spoken on the PC and sent to their phone). "
+            "Work out the exact local date and time from the date/time in the message tag. "
+            "If the owner gave no time, ask instead of guessing."),
+        "input_schema": _schema({
+            "text": {"type": "string", "description": "What to remind them of, phrased as a reminder"},
+            "when": {"type": "string", "description": "Local time, ISO format, e.g. 2026-11-10T09:00"},
+            "repeat": {"type": "string", "enum": ["none", "daily", "weekdays", "weekly"]},
+        }),
+        "strict": True,
+    },
+    {
+        "name": "set_timer",
+        "description": "Start a countdown timer. Use for 'in N minutes' requests.",
+        "input_schema": _schema({"minutes": {"type": "number"}, "label": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "list_reminders",
+        "description": "List upcoming reminders and timers with their ids.",
+        "input_schema": _schema({}),
+        "strict": True,
+    },
+    {
+        "name": "cancel_reminder",
+        "description": "Cancel a reminder or timer by id (get ids from list_reminders).",
+        "input_schema": _schema({"reminder_id": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "add_to_list",
+        "description": "Add an item to a named list, e.g. 'shopping' or 'to-do'.",
+        "input_schema": _schema({"list_name": {"type": "string"}, "item": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "show_list",
+        "description": "Show a list's items, numbered. Empty list_name shows all list names.",
+        "input_schema": _schema({"list_name": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "remove_from_list",
+        "description": "Remove an item from a list by its number or text, or 'all' to clear it.",
+        "input_schema": _schema({"list_name": {"type": "string"}, "item": {"type": "string"}}),
+        "strict": True,
+    },
     {
         "name": "system_status",
         "description": "Report this PC's CPU, memory, disk and battery status.",
@@ -158,6 +226,15 @@ async def call_owner(reason: str) -> str:
 
 
 HANDLERS: dict[str, Callable[..., Awaitable[str]]] = {
+    "get_weather": weather.get_weather,
+    "get_time": weather.get_time,
+    "set_reminder": reminders.set_reminder,
+    "set_timer": reminders.set_timer,
+    "list_reminders": reminders.list_reminders,
+    "cancel_reminder": reminders.cancel_reminder,
+    "add_to_list": reminders.add_to_list,
+    "show_list": reminders.show_list,
+    "remove_from_list": reminders.remove_from_list,
     "system_status": system_status,
     "open_website": open_website,
     "launch_app": launch_app,
