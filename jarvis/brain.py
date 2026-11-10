@@ -75,8 +75,15 @@ class Brain:
                 reply = "My API key was rejected. Check ANTHROPIC_API_KEY in the .env file."
                 self._rollback_turn()
             except anthropic.APIStatusError as exc:
-                log.exception("Claude API error")
-                reply = f"Something went wrong on my end (error {exc.status_code})."
+                detail = _api_error_detail(exc)
+                log.error("Claude API error %s: %s", exc.status_code, detail)
+                if "credit balance" in detail.lower():
+                    reply = ("My API account is out of credit. Add credit at platform.claude.com, "
+                             "under Billing, for the organization this key belongs to.")
+                elif "usage limit" in detail.lower():
+                    reply = "I've hit the monthly spend limit you set. Raise it at platform.claude.com."
+                else:
+                    reply = f"Something went wrong on my end (error {exc.status_code}): {detail}"
                 self._rollback_turn()
             events.publish({"type": "reply", "channel": channel, "text": reply})
             events.publish({"type": "state", "state": "idle"})
@@ -169,6 +176,13 @@ class Brain:
             log.exception("Could not summarise history; starting fresh")
             self._carryover = ""
         self.messages = []
+
+
+def _api_error_detail(exc: anthropic.APIStatusError) -> str:
+    """The API's own explanation (it never contains the API key)."""
+    body = exc.body if isinstance(exc.body, dict) else {}
+    message = (body.get("error") or {}).get("message") or str(exc)
+    return message[:300]
 
 
 def _text_of(content: list[Any]) -> str:
