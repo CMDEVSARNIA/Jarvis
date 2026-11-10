@@ -103,8 +103,9 @@ async def _handle(client: httpx.AsyncClient, update: dict) -> None:
     if not settings.telegram_owner_chat_id:
         # First-run helper: tell the owner which id to put in .env.
         await _call(client, "sendMessage", chat_id=chat_id, text=(
-            f"Your chat id is {chat_id}. Put TELEGRAM_OWNER_CHAT_ID={chat_id} "
-            "in Jarvis's .env file and restart him."))
+            f"Your chat id is {chat_id}. On the PC, run the settings tool "
+            "(python -m jarvis.configure), enter this number at 'Your chat id', "
+            "then restart Jarvis."))
         return
     if chat_id != settings.telegram_owner_chat_id:
         log.warning("Ignoring Telegram message from unknown chat %s", chat_id)
