@@ -13,7 +13,7 @@ import sys
 
 import anthropic
 
-from .config import ROOT, settings
+from .config import ROOT, claude_headers, settings
 
 SAFE_HEADERS = ("content-type", "content-length", "server", "request-id", "cf-ray", "via", "x-cache")
 
@@ -49,14 +49,15 @@ def check_key() -> bool:
         line("ANTHROPIC_API_KEY", "MISSING - run python -m jarvis.configure")
         return False
     problems = []
-    if not key.startswith("sk-ant-api"):
-        problems.append(f"starts with '{key[:10]}', expected 'sk-ant-api'")
+    if not key.startswith("sk-ant-"):
+        problems.append(f"starts with '{key[:7]}', expected 'sk-ant-'")
     if any(c.isspace() for c in key):
         problems.append("contains spaces or line breaks")
     if not key.isascii():
         problems.append("contains non-standard characters (bad paste?)")
     if key.startswith(('"', "'")) or key.endswith(('"', "'")):
         problems.append("wrapped in quotes")
+    line("type prefix", key[:10] + "...")
     line("length", len(key))
     line("ends with", "..." + key[-4:])
     line("looks valid", "yes" if not problems else "NO: " + "; ".join(problems))
@@ -85,8 +86,9 @@ def main() -> None:
             line(var, "SET (value hidden)")
 
     key_ok = check_key()
+    line("workspace id", settings.workspace_id or "not set (fine if the key is scoped to a workspace)")
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(default_headers=claude_headers())
     section("Step 1: can we reach the API and see the model?")
     try:
         m = client.models.retrieve(settings.model)
@@ -114,6 +116,9 @@ def main() -> None:
     print("  Step 1 fails      -> network, proxy, base URL or key problem (see the sections above)")
     print("  Only step 3 fails -> a setting in Jarvis's own request; send this report to Claude")
     print("  All OK            -> restart Jarvis; it should work now")
+    print("  'anthropic-workspace-id' in an error -> your key isn't scoped to a workspace. Either")
+    print("     create a new key scoped to a workspace (Console > API keys > Create key), or copy the")
+    print("     workspace ID (Console > Workspaces, starts with wrkspc_) into python -m jarvis.configure")
     if not key_ok:
         print("  Your key looks malformed: run python -m jarvis.configure and paste it again.")
 

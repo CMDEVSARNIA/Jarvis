@@ -15,7 +15,7 @@ from typing import Any
 import anthropic
 
 from . import events
-from .config import settings
+from .config import claude_headers, settings
 from .tools import TOOLS, load_memory, run_tool
 
 log = logging.getLogger("jarvis.brain")
@@ -42,7 +42,7 @@ REFUSAL_REPLY = "I'm afraid I can't help with that one."
 
 class Brain:
     def __init__(self) -> None:
-        self.client = anthropic.AsyncAnthropic()
+        self.client = anthropic.AsyncAnthropic(default_headers=claude_headers())
         self.messages: list[dict[str, Any]] = []
         self.lock = asyncio.Lock()
         self._carryover = ""  # summary of a previous, folded conversation
@@ -80,6 +80,9 @@ class Brain:
                 if "credit balance" in detail.lower():
                     reply = ("My API account is out of credit. Add credit at platform.claude.com, "
                              "under Billing, for the organization this key belongs to.")
+                elif "anthropic-workspace-id" in detail:
+                    reply = ("Your API key isn't tied to one workspace, so I need a workspace ID. "
+                             "Run checkup.bat or the settings tool for the fix.")
                 elif "usage limit" in detail.lower():
                     reply = "I've hit the monthly spend limit you set. Raise it at platform.claude.com."
                 else:

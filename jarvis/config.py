@@ -48,6 +48,8 @@ class Settings:
     model: str = _env("JARVIS_MODEL", "claude-opus-5-5")
     effort: str = _env("JARVIS_EFFORT", "low")
     owner_name: str = _env("OWNER_NAME", "sir")
+    # Needed only for a personal/service-account key that isn't scoped to one workspace.
+    workspace_id: str = _env("ANTHROPIC_WORKSPACE_ID")
 
     host: str = _env("HOST", "127.0.0.1")
     port: int = int(_env("PORT", "8000"))
@@ -79,3 +81,8 @@ class Settings:
 
 
 settings = Settings()
+
+
+def claude_headers() -> dict[str, str] | None:
+    """Extra headers for every Claude API request."""
+    return {"anthropic-workspace-id": settings.workspace_id} if settings.workspace_id else None

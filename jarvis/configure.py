@@ -65,6 +65,12 @@ def main() -> None:
     choice = input(f"Choose 1-3 [{cur.get('JARVIS_MODEL') or 'claude-opus-5-5'}]: ").strip()
     if choice in MODELS:
         set_key(str(ENV), "JARVIS_MODEL", MODELS[choice][0], quote_mode="never")
+    print("Workspace ID: only needed if your key is NOT scoped to a workspace.")
+    print("  Find it at platform.claude.com > Workspaces (starts with wrkspc_). Leave blank otherwise.")
+    ask(cur, "ANTHROPIC_WORKSPACE_ID", "Workspace ID")
+    ws = cur.get("ANTHROPIC_WORKSPACE_ID", "")
+    if ws and not ws.startswith("wrkspc_"):
+        print("  Warning: workspace IDs start with wrkspc_ - check you copied the ID, not the name.")
     ask(cur, "OWNER_NAME", "What should Jarvis call you", default="sir")
 
     section("Telegram (phone chat)")
