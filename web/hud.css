@@ -70,9 +70,13 @@ body {
 .links { list-style: none; margin: 0; padding: 0; font-size: 13px; }
 .links li { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
 .links em { color: var(--muted); font-style: normal; font-size: 11px; margin-left: auto; text-align: right; max-width: 150px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red); }
+.dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red); }
 .dot.on { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
 
+.dash { margin: 0 0 4px; font-size: 13px; color: var(--text); text-transform: capitalize; }
+.dashlist { list-style: none; margin: 0 0 4px; padding: 0; font-size: 12px; }
+.dashlist li { padding: 3px 0; border-bottom: 1px dashed rgba(79,209,255,0.1); }
+.dashlist li.empty { color: var(--muted); border: none; }
 .activity { list-style: none; margin: 0; padding: 0; font-size: 12px; color: var(--muted); overflow-y: auto; flex: 1; }
 .activity li { padding: 4px 0; border-bottom: 1px dashed rgba(79,209,255,0.1); }
 .activity li b { color: var(--cyan); font-weight: 500; }

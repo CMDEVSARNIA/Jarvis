@@ -21,6 +21,13 @@ remembered at the desk.
 - `set_reminder`, `set_timer`, `list_reminders`, `cancel_reminder`: reminders are spoken on the
   PC and sent to Telegram; ones missed while Jarvis was off arrive late, marked as such
 - `add_to_list`, `show_list`, `remove_from_list`: to-do, shopping and any other lists
+- `media_control`, `set_volume`: play/pause/next/mute and volume via the media keys (Windows)
+- `save_protocol`, `run_protocol`, `list_protocols`, `delete_protocol`: named routines such as
+  "work mode", built only from the actions above
+
+Jarvis also greets you when the HUD opens, gives a daily briefing (weather, reminders, to-dos)
+at `BRIEFING_TIME` on the PC and Telegram, shows live weather/reminder/to-do panels, and
+remembers your recent conversations across restarts (`data/transcript.jsonl`).
 - `system_status`: CPU / memory / disk / battery
 - `open_website`: open a URL on the PC
 - `launch_app`: start apps **from an allowlist** in `config/apps.json`

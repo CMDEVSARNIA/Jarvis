@@ -8,13 +8,15 @@ which keeps prompt caching effective and replayed thinking blocks valid.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+from datetime import datetime
 from typing import Any
 
 import anthropic
 
 from . import events
-from .config import claude_headers, local_now, settings
+from .config import DATA_DIR, claude_headers, local_now, settings
 from .tools import TOOLS, load_memory, run_tool
 
 log = logging.getLogger("jarvis.brain")
@@ -28,6 +30,11 @@ you how your reply will be delivered:
 - "hud" or "call": your reply is SPOKEN aloud. Keep it to one to three short sentences,
   conversational, no markdown, no lists, no URLs read out character by character.
 - "telegram": your reply is a text message. Brief, plain text, light formatting at most.
+- "briefing": the owner asked for their daily briefing; it is SPOKEN aloud. Greet them by
+  time of day, then cover weather (and what to wear or bring), today's reminders and to-dos
+  in four to six natural sentences. No lists, no markdown. Skip anything empty.
+
+When a protocol runs, speak any "say:" lines from its result as part of your reply.
 
 You can act on the PC and reach the owner by phone through your tools. Use get_weather for
 weather rather than web search. To read a web page, use web_fetch on its URL. If a web tool
@@ -39,6 +46,12 @@ irreversible. You cannot place calls to anyone except the owner. If a tool fails
 MAX_HISTORY_CHARS = 300_000
 
 REFUSAL_REPLY = "I'm afraid I can't help with that one."
+
+# A plain-text log of exchanges, so Jarvis remembers recent conversations after a
+# restart (only the words, never tool data or keys).
+TRANSCRIPT_FILE = DATA_DIR / "transcript.jsonl"
+SESSION_START = datetime.now().isoformat(timespec="seconds")
+RECALL_EXCHANGES = 12
 
 
 class Brain:
@@ -89,6 +102,7 @@ class Brain:
                 else:
                     reply = f"Something went wrong on my end (error {exc.status_code}): {detail}"
                 self._rollback_turn()
+            self._log_exchange(channel, text, reply)
             events.publish({"type": "reply", "channel": channel, "text": reply})
             events.publish({"type": "state", "state": "idle"})
             return reply
@@ -96,6 +110,47 @@ class Brain:
     def reset(self) -> None:
         self.messages = []
         self._carryover = ""
+        self._append_transcript({"reset": True, "t": datetime.now().isoformat(timespec="seconds")})
+
+    # ------------------------------------------------------ memory on disk --
+    def _append_transcript(self, entry: dict) -> None:
+        try:
+            DATA_DIR.mkdir(exist_ok=True)
+            with TRANSCRIPT_FILE.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(entry) + "\n")
+            if TRANSCRIPT_FILE.stat().st_size > 2_000_000:  # keep the file small
+                lines = TRANSCRIPT_FILE.read_text(encoding="utf-8").splitlines()[-500:]
+                TRANSCRIPT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        except OSError:
+            log.warning("Couldn't write the transcript")
+
+    def _log_exchange(self, channel: str, text: str, reply: str) -> None:
+        user = "(asked for the daily briefing)" if channel == "briefing" else text
+        self._append_transcript({"t": datetime.now().isoformat(timespec="seconds"),
+                                 "channel": channel, "user": user, "jarvis": reply})
+
+    def _recent_history(self) -> str:
+        """Exchanges from earlier sessions (after the last reset), newest last."""
+        try:
+            lines = TRANSCRIPT_FILE.read_text(encoding="utf-8").splitlines()
+        except FileNotFoundError:
+            return ""
+        entries = []
+        for line in lines:
+            try:
+                e = json.loads(line)
+            except ValueError:
+                continue
+            if e.get("reset"):
+                entries = []
+            elif e.get("t", "") < SESSION_START:
+                entries.append(e)
+        out = []
+        for e in entries[-RECALL_EXCHANGES:]:
+            when = e["t"][:16].replace("T", " ")
+            out.append(f"[{when} via {e['channel']}] Owner: {e['user'][:300]}\n"
+                       f"  You: {e['jarvis'][:300]}")
+        return "\n".join(out)
 
     # ------------------------------------------------------------ internals --
     async def _create(self, messages: list[dict[str, Any]], **extra: Any):
@@ -163,6 +218,10 @@ class Brain:
             parts.append("Things you know about the owner:\n- " + "\n- ".join(facts))
         if self._carryover:
             parts.append("Summary of your earlier conversation:\n" + self._carryover)
+        recent = self._recent_history()
+        if recent:
+            parts.append("Your most recent exchanges from earlier sessions (for context; "
+                         "don't repeat them unless asked):\n" + recent)
         return ("\n\n".join(parts) + "\n\n") if parts else ""
 
     def _history_chars(self) -> int:

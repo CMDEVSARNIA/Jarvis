@@ -161,6 +161,7 @@ def main() -> None:
     ask(cur, "OWNER_NAME", "What should Jarvis call you", default="sir")
     ask(cur, "HOME_LOCATION", "Your city, for weather (e.g. Toronto, Canada)")
     ask(cur, "UNITS", "Units: metric or imperial", default="metric")
+    ask(cur, "BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", default="08:00")
 
     section("Telegram (phone chat)")
     ask(cur, "TELEGRAM_BOT_TOKEN", "Bot token from @BotFather (hidden)", secret=True)

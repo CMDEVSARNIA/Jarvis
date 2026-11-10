@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import events, phone, reminders, telegram_bot
+from . import briefing, events, phone, reminders, telegram_bot
 from .brain import brain
 from .config import WEB_DIR, settings
 
@@ -23,7 +23,8 @@ log = logging.getLogger("jarvis.server")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     tasks = [asyncio.create_task(telegram_bot.run()),
-             asyncio.create_task(reminders.run_scheduler())]
+             asyncio.create_task(reminders.run_scheduler()),
+             asyncio.create_task(briefing.run())]
     yield
     for task in tasks:
         task.cancel()
@@ -66,7 +67,14 @@ def _status() -> dict:
         "telegram_status": telegram_bot.status[1],
         "phone": settings.phone_enabled,
         "model": settings.model,
+        "dashboard": briefing.dashboard,
     }
+
+
+async def _briefing_now() -> None:
+    """The HUD's BRIEFING button: always give one, even if already given today."""
+    briefing._mark_briefed("")
+    await briefing.give_briefing(send_telegram=False)
 
 
 @app.websocket("/ws")
@@ -87,6 +95,7 @@ async def ws(socket: WebSocket) -> None:
             await asyncio.sleep(2)
 
     tasks = [asyncio.create_task(pump_events()), asyncio.create_task(pump_status())]
+    asyncio.create_task(briefing.greet())  # only acts the first time per run
     try:
         while True:
             msg = await socket.receive_json()
@@ -95,6 +104,8 @@ async def ws(socket: WebSocket) -> None:
             if kind == "chat" and text:
                 # Run in the background so the socket keeps streaming events.
                 asyncio.create_task(brain.ask(text, channel="hud"))
+            elif kind == "briefing":
+                asyncio.create_task(_briefing_now())
             elif kind == "reset":
                 brain.reset()
                 events.publish({"type": "reply", "channel": "hud",

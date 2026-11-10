@@ -50,7 +50,8 @@ class Settings:
     owner_name: str = _env("OWNER_NAME", "sir")
     home_location: str = _env("HOME_LOCATION")          # e.g. "Toronto, Canada"
     units: str = _env("UNITS", "metric").lower()        # metric | imperial
-    timezone: str = _env("JARVIS_TIMEZONE")             # e.g. America/Toronto; blank = this computer's
+    timezone: str = _env("JARVIS_TIMEZONE")
+    briefing_time: str = _env("BRIEFING_TIME", "08:00")  # HH:MM daily; blank = only on startup             # e.g. America/Toronto; blank = this computer's
     # Needed only for a personal/service-account key that isn't scoped to one workspace.
     workspace_id: str = _env("ANTHROPIC_WORKSPACE_ID")
 

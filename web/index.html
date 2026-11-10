@@ -28,6 +28,15 @@
         <li><span class="dot" id="link-phone"></span>Phone</li>
       </ul>
 
+      <h2>WEATHER</h2>
+      <p class="dash" id="dash-weather">--</p>
+
+      <h2>UPCOMING</h2>
+      <ul class="dashlist" id="dash-upcoming"><li class="empty">No reminders</li></ul>
+
+      <h2>TO-DO</h2>
+      <ul class="dashlist" id="dash-todo"><li class="empty">Nothing on the list</li></ul>
+
       <h2>ACTIVITY</h2>
       <ul class="activity" id="activity"></ul>
     </section>
@@ -52,6 +61,7 @@
       <input type="checkbox" id="always-listen"> WAKE WORD
     </label>
     <label class="toggle"><input type="checkbox" id="voice-on" checked> VOICE</label>
+    <button id="briefing" class="pill" title="Hear today's briefing">BRIEFING</button>
     <button id="call-me" class="pill" title="Have Jarvis ring your phone">CALL MY PHONE</button>
     <button id="reset" class="pill ghost" title="Clear conversation">RESET</button>
   </footer>

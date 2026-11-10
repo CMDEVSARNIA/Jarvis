@@ -269,13 +269,14 @@
         $("link-phone").classList.toggle("on", ev.phone);
         $("call-me").disabled = !ev.phone;
         $("model-name").textContent = ev.model;
+        if (ev.dashboard) renderDashboard(ev.dashboard);
         break;
       case "user":
-        if (ev.channel !== "hud") addMsg("user", ev.text, ev.channel);
+        if (ev.channel !== "hud" && ev.channel !== "briefing") addMsg("user", ev.text, ev.channel);
         break;
       case "reply":
         addMsg("jarvis", ev.text, ev.channel);
-        if (ev.channel === "hud") speak(ev.text); else setState("idle", false);
+        if (ev.channel === "hud" || ev.channel === "briefing") speak(ev.text); else setState("idle", false);
         break;
       case "tool":
         addMsg("tool", `${ev.name} ${JSON.stringify(ev.input)}`);
@@ -298,6 +299,26 @@
     }
   }
 
+  function fillList(id, items, emptyText) {
+    const ul = $(id);
+    ul.replaceChildren();
+    if (!items || !items.length) {
+      const li = document.createElement("li");
+      li.className = "empty"; li.textContent = emptyText;
+      ul.append(li); return;
+    }
+    for (const item of items) {
+      const li = document.createElement("li");
+      li.textContent = item;
+      ul.append(li);
+    }
+  }
+  function renderDashboard(d) {
+    $("dash-weather").textContent = d.weather || "--";
+    fillList("dash-upcoming", d.upcoming, "No reminders");
+    fillList("dash-todo", d.todo, "Nothing on the list");
+  }
+
   function send(text) {
     if (!text || !socket || socket.readyState !== 1) return;
     addMsg("user", text, "hud");
@@ -310,6 +331,9 @@
     e.preventDefault();
     const input = $("chat-input");
     send(input.value.trim()); input.value = "";
+  });
+  $("briefing").addEventListener("click", () => {
+    if (socket && socket.readyState === 1) { setState("thinking", false); socket.send(JSON.stringify({ type: "briefing" })); }
   });
   $("reset").addEventListener("click", () => socket && socket.send(JSON.stringify({ type: "reset" })));
   $("call-me").addEventListener("click", async () => {

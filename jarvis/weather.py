@@ -111,6 +111,15 @@ async def _get_weather(location: str) -> str:
     return json.dumps(report)
 
 
+async def current_summary() -> str:
+    """One short line for the HUD panel, e.g. 'light rain, 3°C'."""
+    try:
+        now = json.loads(await _get_weather(""))["now"]
+        return now.split(" (feels")[0]
+    except Exception:
+        return ""
+
+
 async def _get_time(location: str) -> str:
     name = location.strip() or settings.home_location
     if not name:

@@ -144,6 +144,22 @@ async def run_scheduler() -> None:
         await asyncio.sleep(10)
 
 
+def upcoming(limit: int = 3, before: datetime | None = None) -> list[str]:
+    """Next reminders as short strings, for the briefing and the HUD panel."""
+    items = sorted(_load(REMINDERS_FILE, []), key=lambda i: i["due"])
+    out = []
+    for i in items:
+        due = datetime.fromisoformat(i["due"])
+        if before and due > before:
+            break
+        out.append(f"{_fmt(due)} - {i['text']}")
+    return out[:limit]
+
+
+def all_lists() -> dict[str, list[str]]:
+    return _load(LISTS_FILE, {})
+
+
 # -------------------------------------------------------------------- lists --
 
 async def add_to_list(list_name: str, item: str) -> str:

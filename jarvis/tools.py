@@ -15,7 +15,7 @@ from typing import Any, Awaitable, Callable
 
 import psutil
 
-from . import reminders, weather
+from . import media, protocols, reminders, weather
 from .config import DATA_DIR, settings
 
 MEMORY_FILE = DATA_DIR / "memory.json"
@@ -57,6 +57,53 @@ TOOLS: list[dict[str, Any]] = [
         "name": "get_time",
         "description": "The current local time in a city. Empty location = the owner's home.",
         "input_schema": _schema({"location": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "media_control",
+        "description": "Control whatever is playing (Spotify, YouTube, ...) with the media keys.",
+        "input_schema": _schema({"action": {"type": "string",
+                                            "enum": ["play_pause", "next", "previous", "mute"]}}),
+        "strict": True,
+    },
+    {
+        "name": "set_volume",
+        "description": "Set the PC's volume, 0-100.",
+        "input_schema": _schema({"level": {"type": "integer"}}),
+        "strict": True,
+    },
+    {
+        "name": "run_protocol",
+        "description": ("Run a saved protocol (routine) by name, e.g. 'work mode'. When the owner "
+                        "says '<name> protocol' or '<name> mode', try this first."),
+        "input_schema": _schema({"name": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "save_protocol",
+        "description": (
+            "Create or replace a protocol: a named routine of steps that runs on one command. "
+            "Read the steps back to the owner and get their OK before saving. Actions: "
+            + "; ".join(f"{a} (value: {d})" for a, d in protocols.ACTIONS.items())),
+        "input_schema": _schema({
+            "name": {"type": "string"},
+            "steps": {"type": "array", "items": _schema({
+                "action": {"type": "string", "enum": list(protocols.ACTIONS)},
+                "value": {"type": "string"},
+            })},
+        }),
+        "strict": True,
+    },
+    {
+        "name": "list_protocols",
+        "description": "List saved protocols and their steps.",
+        "input_schema": _schema({}),
+        "strict": True,
+    },
+    {
+        "name": "delete_protocol",
+        "description": "Delete a saved protocol by name.",
+        "input_schema": _schema({"name": {"type": "string"}}),
         "strict": True,
     },
     {
@@ -227,6 +274,12 @@ async def call_owner(reason: str) -> str:
 
 HANDLERS: dict[str, Callable[..., Awaitable[str]]] = {
     "get_weather": weather.get_weather,
+    "media_control": media.media_control,
+    "set_volume": media.set_volume,
+    "run_protocol": protocols.run_protocol,
+    "save_protocol": protocols.save_protocol,
+    "list_protocols": protocols.list_protocols,
+    "delete_protocol": protocols.delete_protocol,
     "get_time": weather.get_time,
     "set_reminder": reminders.set_reminder,
     "set_timer": reminders.set_timer,
