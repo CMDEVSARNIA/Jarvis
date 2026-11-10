@@ -144,6 +144,7 @@ button { font: inherit; cursor: pointer; }
 .pill:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
 .toggle { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); display: flex; gap: 6px; align-items: center; white-space: nowrap; }
 .toggle input { accent-color: var(--cyan); }
+.pause-select { background: rgba(4,20,32,0.9); color: var(--text); border: 1px solid var(--line); font: inherit; font-size: 11px; padding: 3px 4px; }
 
 .locked {
   position: fixed; inset: 0; background: rgba(2,7,13,0.94); z-index: 10;

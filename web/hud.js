@@ -179,69 +179,117 @@
   }
 
   // Speech recognition (Chrome / Edge).
+  //
+  // The browser decides on its own that you've stopped talking after a short
+  // pause, and a web page can't change that. So recognition runs continuously,
+  // the words are collected across pauses, and the question is only sent after
+  // you've been quiet for PAUSE_MS. If the browser ends a session early, it is
+  // restarted without losing what was already heard.
+  //   - Hold Space: listens while held, sends when you let go.
+  //   - Click MIC: listens until you pause (or click again to send now).
+  //   - Wake word: always listening; "Jarvis ..." questions are sent after a pause.
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, recActive = false, wantContinuous = false, pausedForSpeech = false;
+  let mode = null;                 // null | "hold" | "tap" | "wake"
+  let heard = [], interimText = "", silenceTimer = null;
+  let PAUSE_MS = Number(store.get("jarvis-pause-ms")) || 2500;
+
+  function currentText() { return (heard.join(" ") + " " + interimText).replace(/\s+/g, " ").trim(); }
+  function clearHeard() { heard = []; interimText = ""; clearTimeout(silenceTimer); }
+
   if (SR) {
     rec = new SR();
     rec.lang = "en-GB";
     rec.interimResults = true;
+    rec.continuous = true;
     rec.onresult = (e) => {
-      let interim = "", final = "";
+      interimText = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
-        (r.isFinal ? (final += r[0].transcript) : (interim += r[0].transcript));
+        if (r.isFinal) heard.push(r[0].transcript.trim());
+        else interimText += r[0].transcript;
       }
       level = Math.min(1, level + 0.35);
-      if (interim) $("caption").textContent = interim;
-      if (final) handleHeard(final.trim());
+      const text = currentText();
+      if (text) $("caption").textContent = text;
+      clearTimeout(silenceTimer);
+      if (mode !== "hold") silenceTimer = setTimeout(finishUtterance, PAUSE_MS);
     };
-    rec.onstart = () => { recActive = true; if (!wantContinuous) setState("listening"); };
+    rec.onstart = () => { recActive = true; if (mode && mode !== "wake") setState("listening"); };
     rec.onend = () => {
       recActive = false;
-      if (wantContinuous && !pausedForSpeech) { try { rec.start(); } catch { /* already starting */ } }
+      // Chrome ends sessions on its own (silence, ~60s limit, network blips): keep going.
+      if (mode && !pausedForSpeech) { try { rec.start(); } catch { /* already starting */ } }
       else if (state === "listening") setState("idle");
     };
-    rec.onerror = (e) => { if (e.error === "not-allowed") addActivity("<b>MIC</b> permission denied"); };
+    rec.onerror = (e) => {
+      if (e.error === "not-allowed") { addActivity("<b>MIC</b> permission denied"); mode = null; }
+    };
   } else {
     $("mic").disabled = true;
     $("always-listen").disabled = true;
     $("mic").title = "Speech recognition needs Chrome or Edge";
   }
 
-  function handleHeard(text) {
-    if (wantContinuous) {
+  function finishUtterance() {
+    clearTimeout(silenceTimer);
+    const was = mode;               // decide using the mode the words were spoken in
+    let text = currentText();
+    clearHeard();
+    if (was === "tap") stopSession();
+    if (!text) return;
+    if (was === "wake") {
       const m = text.match(/\bjarvis\b[,.!?]?\s*(.*)$/i);
-      if (!m) return;                       // not addressed to Jarvis
+      if (!m) { $("caption").textContent = ""; return; }   // not addressed to Jarvis
       text = m[1].trim();
       if (!text) { speak("Yes?"); return; }
     }
     send(text);
   }
 
-  function startListening() {
-    if (!rec || recActive) return;
+  function startSession(newMode) {
+    if (!rec) return;
     speechSynthesis.cancel();
-    try { rec.continuous = wantContinuous; rec.start(); } catch { /* ignore */ }
+    clearHeard();
+    mode = newMode;
+    if (!recActive) { try { rec.start(); } catch { /* already running */ } }
+    else if (mode !== "wake") setState("listening");
   }
-  function stopListening() { if (rec && recActive && !wantContinuous) rec.stop(); }
+  function stopSession() {
+    mode = wantContinuous ? "wake" : null;
+    if (!mode && rec && recActive) rec.stop();
+    if (state === "listening") setState("idle");
+  }
   function pauseRecognitionForSpeech(pause) {
     if (!rec || !wantContinuous) return;
     pausedForSpeech = pause;
     if (pause && recActive) rec.stop();
-    if (!pause && !recActive) startListening();
+    if (!pause && !recActive && mode) { try { rec.start(); } catch { /* ignore */ } }
   }
 
-  $("mic").addEventListener("click", () => (recActive && !wantContinuous ? stopListening() : startListening()));
+  $("mic").addEventListener("click", () => {
+    if (mode === "tap") finishUtterance();          // click again = send now
+    else startSession("tap");
+  });
+  const typing = () => ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
   document.addEventListener("keydown", (e) => {
-    if (e.code === "Space" && document.activeElement !== $("chat-input") && !e.repeat) { e.preventDefault(); startListening(); }
+    if (e.code === "Space" && !typing() && !e.repeat) { e.preventDefault(); startSession("hold"); }
   });
   document.addEventListener("keyup", (e) => {
-    if (e.code === "Space" && document.activeElement !== $("chat-input")) stopListening();
+    if (e.code === "Space" && !typing() && mode === "hold") {
+      // A short grace period lets the last words arrive before sending.
+      setTimeout(() => { finishUtterance(); stopSession(); }, 700);
+    }
   });
   $("always-listen").addEventListener("change", (e) => {
     wantContinuous = e.target.checked;
-    if (wantContinuous) { addActivity("<b>WAKE WORD</b> say “Jarvis …”"); startListening(); }
-    else if (rec && recActive) rec.stop();
+    if (wantContinuous) { addActivity("<b>WAKE WORD</b> say “Jarvis …”"); startSession("wake"); }
+    else { mode = null; clearHeard(); if (rec && recActive) rec.stop(); }
+  });
+  $("pause-length").value = String(PAUSE_MS);
+  $("pause-length").addEventListener("change", (e) => {
+    PAUSE_MS = Number(e.target.value);
+    store.set("jarvis-pause-ms", String(PAUSE_MS));
   });
 
   // --------------------------------------------------------------- socket --

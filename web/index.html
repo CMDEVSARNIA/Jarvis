@@ -78,6 +78,14 @@
       <input type="checkbox" id="always-listen"> WAKE WORD
     </label>
     <label class="toggle"><input type="checkbox" id="voice-on" checked> VOICE</label>
+    <label class="toggle" title="How long a pause means you've finished talking">WAIT
+      <select id="pause-length" class="pause-select">
+        <option value="1500">1.5s</option>
+        <option value="2500">2.5s</option>
+        <option value="4000">4s</option>
+        <option value="6000">6s</option>
+      </select>
+    </label>
     <button id="briefing" class="pill" title="Hear today's briefing">BRIEFING</button>
     <button id="call-me" class="pill" title="Have Jarvis ring your phone">CALL MY PHONE</button>
     <button id="reset" class="pill ghost" title="Clear conversation">RESET</button>
