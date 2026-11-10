@@ -10,7 +10,7 @@ import webbrowser
 
 import uvicorn
 
-from .config import settings
+from .config import settings, valid_anthropic_key
 
 
 def main() -> None:
@@ -20,7 +20,11 @@ def main() -> None:
     for noisy in ("httpx", "httpx2", "httpcore"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set. Copy .env.example to .env and fill it in.")
+        print("ANTHROPIC_API_KEY is not set. Run:  python -m jarvis.configure")
+        sys.exit(1)
+    if not valid_anthropic_key(os.environ["ANTHROPIC_API_KEY"]):
+        print("Your saved Claude API key doesn't look right (it may not have pasted).")
+        print("Run:  python -m jarvis.configure   and paste it again.")
         sys.exit(1)
 
     url = f"http://localhost:{settings.port}/?token={settings.hud_token}"

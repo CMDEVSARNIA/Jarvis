@@ -13,7 +13,7 @@ import sys
 
 import anthropic
 
-from .config import ROOT, claude_headers, settings
+from .config import ROOT, claude_headers, settings, valid_telegram_token
 
 SAFE_HEADERS = ("content-type", "content-length", "server", "request-id", "cf-ray", "via", "x-cache")
 
@@ -74,6 +74,9 @@ def check_telegram() -> None:
         line("bot token", "MISSING - run python -m jarvis.configure")
         return
     line("chat id saved", settings.telegram_owner_chat_id or "not set (the bot will tell you yours)")
+    if not valid_telegram_token(token):
+        line("bot token", f"LOOKS WRONG ({len(token)} characters) - paste it again with the settings tool")
+        return
     base = f"https://api.telegram.org/bot{token}/"
     try:
         me = httpx.get(base + "getMe", timeout=15)
@@ -85,7 +88,7 @@ def check_telegram() -> None:
         hook = httpx.get(base + "getWebhookInfo", timeout=15).json().get("result", {})
         line("webhook", "was set - Jarvis clears it when it starts" if hook.get("url") else "none (good)")
         line("waiting messages", hook.get("pending_update_count", "?"))
-    except httpx.HTTPError as exc:  # never print str(exc): it contains the token
+    except Exception as exc:  # never print str(exc): it contains the token
         line("result", f"could not reach Telegram ({type(exc).__name__})")
         return
     print("  -> Message exactly that @username. Search it in Telegram, or open t.me/<username>.")

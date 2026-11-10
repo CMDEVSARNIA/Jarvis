@@ -2,7 +2,8 @@
 
     python -m jarvis.configure          (Windows: .venv\\Scripts\\python -m jarvis.configure)
 
-Press Enter to keep the value shown in [brackets]. Secrets are typed hidden.
+Press Enter to keep the value shown in [brackets]. Secrets are hidden as you type;
+Ctrl+V and right-click both paste.
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from getpass import getpass
 
 from dotenv import dotenv_values, set_key
 
-from .config import ROOT
+from .config import ROOT, valid_anthropic_key, valid_telegram_token
 
 ENV = ROOT / ".env"
 
@@ -25,17 +26,100 @@ MODELS = {
 }
 
 
+VALIDATORS = {
+    "ANTHROPIC_API_KEY": (valid_anthropic_key, "Claude keys start with sk-ant- and are long"),
+    "TELEGRAM_BOT_TOKEN": (valid_telegram_token, "Telegram tokens look like 123456789:AAF..."),
+}
+
+
+def _windows_clipboard() -> str:
+    """Read text from the Windows clipboard (no extra packages)."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32")
+    kernel32 = ctypes.WinDLL("kernel32")
+    user32.OpenClipboard.argtypes = [wintypes.HWND]
+    user32.GetClipboardData.argtypes = [wintypes.UINT]
+    user32.GetClipboardData.restype = wintypes.HANDLE
+    kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+    kernel32.GlobalLock.restype = wintypes.LPVOID
+    kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+    if not user32.OpenClipboard(None):
+        return ""
+    try:
+        handle = user32.GetClipboardData(13)  # CF_UNICODETEXT
+        if not handle:
+            return ""
+        pointer = kernel32.GlobalLock(handle)
+        try:
+            return ctypes.wstring_at(pointer) if pointer else ""
+        finally:
+            kernel32.GlobalUnlock(handle)
+    finally:
+        user32.CloseClipboard()
+
+
+def read_secret(prompt: str) -> str:
+    """Hidden input. On Windows, getpass turns Ctrl+V into a junk character
+    instead of pasting, so handle keys ourselves and paste from the clipboard."""
+    if os.name != "nt":
+        return getpass(prompt).strip()
+    import msvcrt
+
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    chars: list[str] = []
+    while True:
+        ch = msvcrt.getwch()
+        if ch in ("\r", "\n"):
+            break
+        if ch == "\x03":
+            raise KeyboardInterrupt
+        if ch == "\x08":
+            if chars:
+                chars.pop()
+        elif ch == "\x16":  # Ctrl+V
+            try:
+                chars.extend(_windows_clipboard().strip())
+            except Exception:
+                print("\n  (Couldn't read the clipboard. Right-click to paste instead.)")
+        elif ch in ("\x00", "\xe0"):  # arrow/function keys send two codes
+            msvcrt.getwch()
+        elif ch.isprintable():
+            chars.append(ch)
+    value = "".join(chars).strip()
+    print(f"  ({len(value)} characters entered)" if value else "")
+    return value
+
+
 def ask(current: dict, key: str, prompt: str, secret: bool = False, default: str = "") -> None:
     old = current.get(key) or default
-    if secret:
-        shown = f"[{old[:7]}...{old[-4:]}]" if len(old) > 12 else "[not set]"
-        value = getpass(f"{prompt} {shown}: ").strip()
-    else:
-        value = input(f"{prompt} [{old or 'not set'}]: ").strip()
-    if value == "-":          # explicit clear
-        value = ""
-    elif not value:
-        value = old
+    check = VALIDATORS.get(key)
+    for _attempt in range(3):
+        if secret:
+            if not old:
+                shown = "[not set]"
+            elif check and not check[0](old):
+                shown = "[saved value looks wrong - paste it again]"
+            else:
+                shown = f"[{old[:7]}...{old[-4:]}]"
+            value = read_secret(f"{prompt} {shown}: ")
+        else:
+            value = input(f"{prompt} [{old or 'not set'}]: ").strip()
+        if value == "-":          # explicit clear
+            value = ""
+            break
+        if not value:
+            value = old
+            if not (check and old and not check[0](old)):
+                break
+            print(f"  The saved value doesn't look right. {check[1]}.")
+            continue
+        if check and not check[0](value):
+            print(f"  That doesn't look right ({len(value)} characters). {check[1]}. Try again.")
+            continue
+        break
     set_key(str(ENV), key, value, quote_mode="never")
     current[key] = value
 

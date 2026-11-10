@@ -12,7 +12,7 @@ import logging
 import httpx
 
 from .brain import brain
-from .config import settings
+from .config import settings, valid_telegram_token
 
 log = logging.getLogger("jarvis.telegram")
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -45,6 +45,11 @@ async def run() -> None:
     if not settings.telegram_enabled:
         _set_status(False, "no bot token - run the settings tool")
         log.info("Telegram disabled (no TELEGRAM_BOT_TOKEN)")
+        return
+    if not valid_telegram_token(settings.telegram_token):
+        log.error("The saved Telegram bot token doesn't look right. Re-enter it with "
+                  "python -m jarvis.configure")
+        _set_status(False, "bot token looks wrong - re-enter it")
         return
     log.info("Telegram bot polling")
     _set_status(False, "connecting...")

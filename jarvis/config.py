@@ -83,6 +83,16 @@ class Settings:
 settings = Settings()
 
 
+def valid_anthropic_key(value: str) -> bool:
+    return value.startswith("sk-ant-") and value.isascii() and value.isprintable() \
+        and " " not in value and len(value) > 30
+
+
+def valid_telegram_token(value: str) -> bool:
+    import re
+    return bool(re.fullmatch(r"\d{5,}:[A-Za-z0-9_-]{30,}", value))
+
+
 def claude_headers() -> dict[str, str] | None:
     """Extra headers for every Claude API request."""
     return {"anthropic-workspace-id": settings.workspace_id} if settings.workspace_id else None
