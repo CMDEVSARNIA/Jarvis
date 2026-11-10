@@ -16,6 +16,46 @@ import uvicorn
 from .config import ROOT, settings, valid_anthropic_key
 
 
+def find_edge() -> str | None:
+    """Locate Microsoft Edge on Windows (it's preinstalled on Windows 10/11)."""
+    if sys.platform != "win32":
+        return None
+    candidates = [shutil.which("msedge")]
+    try:
+        import winreg
+        for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+            try:
+                with winreg.OpenKey(root, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe") as key:
+                    candidates.append(winreg.QueryValue(key, None))
+            except OSError:
+                pass
+    except ImportError:
+        pass
+    for env in ("ProgramFiles(x86)", "ProgramFiles", "LocalAppData"):
+        base = os.environ.get(env)
+        if base:
+            candidates.append(os.path.join(base, "Microsoft", "Edge", "Application", "msedge.exe"))
+    return next((c for c in candidates if c and os.path.exists(c)), None)
+
+
+def open_hud(url: str) -> None:
+    """Open the HUD. Default: Edge as a standalone app window (no tabs or address bar),
+    which also gives the best built-in voices. HUD_WINDOW=tab uses the default browser
+    instead; fullscreen with HUD_FULLSCREEN=true."""
+    style = os.environ.get("HUD_WINDOW", "app").strip().lower()
+    edge = find_edge() if style in ("app", "edge") else None
+    if edge:
+        args = [edge, f"--app={url}" if style == "app" else url]
+        args.append("--start-fullscreen" if os.environ.get("HUD_FULLSCREEN", "").lower() == "true"
+                    else "--start-maximized")
+        try:
+            subprocess.Popen(args)
+            return
+        except OSError:
+            pass
+    webbrowser.open(url)
+
+
 def start_tunnel() -> str:
     """On a PC, start ngrok so Twilio can reach Jarvis. Returns a status line."""
     if not settings.ngrok_domain:
@@ -63,7 +103,7 @@ def main() -> None:
         print(f"  Tunnel:    {start_tunnel()}")
     print()
     if not headless:
-        threading.Timer(1.5, webbrowser.open, args=[url]).start()
+        threading.Timer(1.5, open_hud, args=[url]).start()
 
     uvicorn.run("jarvis.server:app", host=settings.host, port=settings.port,
                 log_level="warning")
