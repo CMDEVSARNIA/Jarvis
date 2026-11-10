@@ -293,6 +293,9 @@
       case "activity":
         addActivity(`<b>${esc(ev.label)}</b> ${esc(ev.text)}`);
         break;
+      case "viewer":
+        showViewer(ev);
+        break;
       case "call":
         addActivity(`<b>PHONE</b> ${esc(ev.status)}`);
         break;
@@ -318,6 +321,49 @@
     fillList("dash-upcoming", d.upcoming, "No reminders");
     fillList("dash-todo", d.todo, "Nothing on the list");
   }
+
+  // ------------------------------------------------------------- viewer --
+  let viewerUrl = "";
+  const MODE_LABEL = { frame: "LIVE PAGE", embed: "EMBED", reader: "READER", error: "ERROR" };
+  function showViewer(ev) {
+    const frame = $("viewer-frame"), reader = $("viewer-reader-body");
+    if (ev.mode === "close") {
+      $("viewer").hidden = true; frame.src = "about:blank"; return;
+    }
+    viewerUrl = ev.url || "";
+    $("viewer").hidden = false;
+    $("viewer-mode").textContent = MODE_LABEL[ev.mode] || ev.mode.toUpperCase();
+    $("viewer-url").value = viewerUrl;
+    $("viewer-external").href = /^https?:\/\//.test(viewerUrl) ? viewerUrl : "#";
+    if (ev.mode === "frame" || ev.mode === "embed") {
+      reader.hidden = true; frame.hidden = false; frame.src = ev.embed_url;
+      return;
+    }
+    frame.hidden = true; frame.src = "about:blank"; reader.hidden = false;
+    reader.replaceChildren();
+    const h = document.createElement("h1");
+    h.textContent = ev.title || viewerUrl;
+    reader.append(h);
+    if (ev.note) {
+      const p = document.createElement("p");
+      p.className = "note"; p.textContent = ev.note; reader.append(p);
+    }
+    for (const b of ev.blocks || []) {
+      const tag = ["h1", "h2", "h3", "h4", "li", "blockquote", "pre"].includes(b.tag) ? (b.tag === "h1" ? "h2" : b.tag) : "p";
+      const el = document.createElement(tag);
+      el.textContent = b.text;   // text only: page HTML is never inserted
+      reader.append(el);
+    }
+    reader.scrollTop = 0;
+  }
+  function requestView(url, reader) {
+    if (!url || !socket || socket.readyState !== 1) return;
+    $("viewer-mode").textContent = "LOADING";
+    socket.send(JSON.stringify({ type: "view", text: url, reader: !!reader }));
+  }
+  $("viewer-form").addEventListener("submit", (e) => { e.preventDefault(); requestView($("viewer-url").value.trim(), false); });
+  $("viewer-reader").addEventListener("click", () => requestView(viewerUrl, true));
+  $("viewer-close").addEventListener("click", () => showViewer({ mode: "close" }));
 
   function send(text) {
     if (!text || !socket || socket.readyState !== 1) return;

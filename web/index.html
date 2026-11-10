@@ -44,6 +44,23 @@
     <section class="core">
       <canvas id="reactor" aria-label="Jarvis status visualisation"></canvas>
       <div class="caption" id="caption"></div>
+
+      <div class="viewer" id="viewer" hidden>
+        <div class="viewer-bar">
+          <span class="viewer-mode" id="viewer-mode">PAGE</span>
+          <form id="viewer-form" class="viewer-form" autocomplete="off">
+            <label for="viewer-url" class="sr-only">Web address</label>
+            <input id="viewer-url" placeholder="Type a web address and press Enter">
+          </form>
+          <button type="button" class="vbtn" id="viewer-reader" title="Show as clean text">READER</button>
+          <a class="vbtn" id="viewer-external" href="#" target="_blank" rel="noopener noreferrer" title="Open in a browser tab">BROWSER</a>
+          <button type="button" class="vbtn" id="viewer-close" aria-label="Close the page">CLOSE</button>
+        </div>
+        <iframe id="viewer-frame" title="Web page" hidden
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <article class="reader" id="viewer-reader-body" hidden></article>
+      </div>
     </section>
 
     <section class="panel right">

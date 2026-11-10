@@ -13,9 +13,10 @@ import webbrowser
 from datetime import datetime
 from typing import Any, Awaitable, Callable
 
+import httpx
 import psutil
 
-from . import media, protocols, reminders, weather
+from . import events, media, protocols, reminders, viewer, weather
 from .config import DATA_DIR, settings
 
 MEMORY_FILE = DATA_DIR / "memory.json"
@@ -162,8 +163,29 @@ TOOLS: list[dict[str, Any]] = [
         "strict": True,
     },
     {
+        "name": "show_on_screen",
+        "description": (
+            "Show a web page inside the Jarvis screen (live page, video/map embed, or a clean "
+            "reader view). Prefer this when the owner wants to see or read a page. Login sites "
+            "(email, social media) automatically open in the browser instead."),
+        "input_schema": _schema({"url": {"type": "string", "description": "Full http(s) URL"}}),
+        "strict": True,
+    },
+    {
+        "name": "show_map",
+        "description": "Show a map of a place or address inside the Jarvis screen.",
+        "input_schema": _schema({"place": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "close_screen",
+        "description": "Close the page or map currently shown on the Jarvis screen.",
+        "input_schema": _schema({}),
+        "strict": True,
+    },
+    {
         "name": "open_website",
-        "description": "Open a URL in the default browser on the owner's PC.",
+        "description": "Open a URL in a separate browser tab on the owner's PC (only when they ask for a tab or the browser).",
         "input_schema": _schema({"url": {"type": "string", "description": "Full http(s) URL"}}),
         "strict": True,
     },
@@ -224,6 +246,35 @@ async def system_status() -> str:
     return json.dumps(await asyncio.to_thread(collect))
 
 
+async def show_on_screen(url: str) -> str:
+    try:
+        payload = await viewer.prepare(url)
+    except viewer.BlockedURL as exc:
+        return f"Not shown: {exc}"
+    except httpx.HTTPError as exc:
+        return f"Couldn't load the page ({type(exc).__name__}). It may be down or slow."
+    if payload["mode"] == "external":
+        await open_website(payload["url"])
+        return f"Opened in the browser instead. {payload.get('note', '')}"
+    events.publish({"type": "viewer", **payload})
+    if payload["mode"] == "reader":
+        excerpt = " ".join(b["text"] for b in payload["blocks"])[:1500]
+        return f"Showing a reader view of '{payload['title']}'. Start of the text: {excerpt}"
+    kind = "the live page" if payload["mode"] == "frame" else "the embedded player/map"
+    return f"Showing {kind} for {payload['url']} on screen."
+
+
+async def show_map(place: str) -> str:
+    events.publish({"type": "viewer", "mode": "embed", "url": f"https://maps.google.com/?q={place}",
+                    "embed_url": viewer.map_embed(place), "title": place})
+    return f"Showing a map of {place} on screen."
+
+
+async def close_screen() -> str:
+    events.publish({"type": "viewer", "mode": "close"})
+    return "Closed."
+
+
 async def open_website(url: str) -> str:
     if not url.startswith(("http://", "https://")):
         return "Refused: only http(s) URLs can be opened."
@@ -274,6 +325,9 @@ async def call_owner(reason: str) -> str:
 
 HANDLERS: dict[str, Callable[..., Awaitable[str]]] = {
     "get_weather": weather.get_weather,
+    "show_on_screen": show_on_screen,
+    "show_map": show_map,
+    "close_screen": close_screen,
     "media_control": media.media_control,
     "set_volume": media.set_volume,
     "run_protocol": protocols.run_protocol,

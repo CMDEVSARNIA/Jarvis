@@ -21,6 +21,10 @@ remembered at the desk.
 - `set_reminder`, `set_timer`, `list_reminders`, `cancel_reminder`: reminders are spoken on the
   PC and sent to Telegram; ones missed while Jarvis was off arrive late, marked as such
 - `add_to_list`, `show_list`, `remove_from_list`: to-do, shopping and any other lists
+- `show_on_screen`, `show_map`, `close_screen`: show pages inside the HUD's viewer panel: the live
+  page where the site allows it, official YouTube/Spotify/Maps embeds, otherwise a clean reader
+  view; login sites (email, social) open in the browser. The viewer only fetches public websites:
+  addresses on your PC or home network are refused, including via redirects.
 - `media_control`, `set_volume`: play/pause/next/mute and volume via the media keys (Windows)
 - `save_protocol`, `run_protocol`, `list_protocols`, `delete_protocol`: named routines such as
   "work mode", built only from the actions above

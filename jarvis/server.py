@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import briefing, events, phone, reminders, telegram_bot
+from . import briefing, events, phone, reminders, telegram_bot, viewer
 from .brain import brain
 from .config import WEB_DIR, settings
 
@@ -71,6 +71,18 @@ def _status() -> dict:
     }
 
 
+async def _view(url: str, force_reader: bool) -> None:
+    """The viewer's address box and Reader button."""
+    try:
+        payload = await viewer.prepare(url, force_reader=force_reader)
+    except viewer.BlockedURL as exc:
+        payload = {"mode": "error", "url": url, "title": "Can't show this page", "note": str(exc)}
+    except Exception as exc:  # network trouble, bad encodings, ...
+        payload = {"mode": "error", "url": url, "title": "Couldn't load the page",
+                   "note": f"{type(exc).__name__}. The site may be down or slow."}
+    events.publish({"type": "viewer", **payload})
+
+
 async def _briefing_now() -> None:
     """The HUD's BRIEFING button: always give one, even if already given today."""
     briefing._mark_briefed("")
@@ -104,6 +116,8 @@ async def ws(socket: WebSocket) -> None:
             if kind == "chat" and text:
                 # Run in the background so the socket keeps streaming events.
                 asyncio.create_task(brain.ask(text, channel="hud"))
+            elif kind == "view" and text:
+                asyncio.create_task(_view(text, bool(msg.get("reader"))))
             elif kind == "briefing":
                 asyncio.create_task(_briefing_now())
             elif kind == "reset":
