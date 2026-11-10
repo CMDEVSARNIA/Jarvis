@@ -56,7 +56,7 @@ class Settings:
     hud_token: str = field(default_factory=_load_or_create_token)
 
     telegram_token: str = _env("TELEGRAM_BOT_TOKEN")
-    telegram_owner_chat_id: str = _env("TELEGRAM_OWNER_CHAT_ID")
+    telegram_owner_chat_id: str = field(default_factory=lambda: clean_chat_id(_env("TELEGRAM_OWNER_CHAT_ID")))
 
     twilio_sid: str = _env("TWILIO_ACCOUNT_SID")
     twilio_token: str = _env("TWILIO_AUTH_TOKEN")
@@ -80,7 +80,15 @@ class Settings:
         )
 
 
-settings = Settings()
+
+
+def clean_chat_id(value: str) -> str:
+    """Pull the numeric Telegram chat id out of whatever was pasted, e.g.
+    'TELEGRAM_OWNER_CHAT_ID=9229556595.' -> '9229556595'."""
+    import re
+    joined = re.sub(r"(?<=\d)\s+(?=\d)", "", value or "")  # "922 955 6595" -> digits
+    match = re.search(r"-?\d{5,}", joined)
+    return match.group(0) if match else ""
 
 
 def valid_anthropic_key(value: str) -> bool:
@@ -96,3 +104,6 @@ def valid_telegram_token(value: str) -> bool:
 def claude_headers() -> dict[str, str] | None:
     """Extra headers for every Claude API request."""
     return {"anthropic-workspace-id": settings.workspace_id} if settings.workspace_id else None
+
+
+settings = Settings()

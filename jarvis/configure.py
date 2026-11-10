@@ -15,7 +15,7 @@ from getpass import getpass
 
 from dotenv import dotenv_values, set_key
 
-from .config import ROOT, valid_anthropic_key, valid_telegram_token
+from .config import ROOT, clean_chat_id, valid_anthropic_key, valid_telegram_token
 
 ENV = ROOT / ".env"
 
@@ -160,6 +160,12 @@ def main() -> None:
     section("Telegram (phone chat)")
     ask(cur, "TELEGRAM_BOT_TOKEN", "Bot token from @BotFather (hidden)", secret=True)
     ask(cur, "TELEGRAM_OWNER_CHAT_ID", "Your chat id (leave blank on first run; the bot tells you)")
+    raw = cur.get("TELEGRAM_OWNER_CHAT_ID", "")
+    cleaned = clean_chat_id(raw)
+    if raw and cleaned != raw:
+        print(f"  Saved just the number: {cleaned or '(none found - leave blank and ask the bot again)'}")
+        set_key(str(ENV), "TELEGRAM_OWNER_CHAT_ID", cleaned, quote_mode="never")
+        cur["TELEGRAM_OWNER_CHAT_ID"] = cleaned
 
     section("Phone calls (Twilio) - optional")
     if yes("Set up phone calls now?"):
