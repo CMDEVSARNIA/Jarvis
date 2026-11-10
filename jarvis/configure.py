@@ -15,7 +15,8 @@ from getpass import getpass
 
 from dotenv import dotenv_values, set_key
 
-from .config import ROOT, clean_chat_id, valid_anthropic_key, valid_telegram_token
+from .config import (ROOT, clean_chat_id, valid_anthropic_key, valid_telegram_token,
+                     valid_twilio_sid, valid_twilio_token)
 
 ENV = ROOT / ".env"
 
@@ -29,6 +30,8 @@ MODELS = {
 VALIDATORS = {
     "ANTHROPIC_API_KEY": (valid_anthropic_key, "Claude keys start with sk-ant- and are long"),
     "TELEGRAM_BOT_TOKEN": (valid_telegram_token, "Telegram tokens look like 123456789:AAF..."),
+    "TWILIO_ACCOUNT_SID": (valid_twilio_sid, "Account SIDs start with AC and are 34 characters"),
+    "TWILIO_AUTH_TOKEN": (valid_twilio_token, "Auth Tokens are 32 letters and digits"),
 }
 
 
@@ -173,9 +176,12 @@ def main() -> None:
         ask(cur, "TWILIO_AUTH_TOKEN", "Twilio Auth Token (hidden)", secret=True)
         ask(cur, "TWILIO_FROM_NUMBER", "Your Twilio number, e.g. +15551234567")
         ask(cur, "OWNER_PHONE_NUMBER", "YOUR cell number, e.g. +15557654321")
-        ask(cur, "PUBLIC_BASE_URL", "Public URL, e.g. https://your-name.ngrok-free.app")
-        url = cur.get("PUBLIC_BASE_URL", "").rstrip("/")
-        set_key(str(ENV), "PUBLIC_BASE_URL", url, quote_mode="never")
+        print("ngrok domain: ngrok.com dashboard > Domains (e.g. your-name.ngrok-free.app).")
+        ask(cur, "NGROK_DOMAIN", "ngrok domain")
+        domain = cur.get("NGROK_DOMAIN", "").strip()
+        for prefix in ("https://", "http://"):
+            domain = domain[len(prefix):] if domain.startswith(prefix) else domain
+        set_key(str(ENV), "NGROK_DOMAIN", domain.rstrip("/"), quote_mode="never")
         for key in ("TWILIO_FROM_NUMBER", "OWNER_PHONE_NUMBER"):
             if cur.get(key) and not cur[key].startswith("+"):
                 print(f"  Warning: {key} should start with + and the country code (US: +1).")

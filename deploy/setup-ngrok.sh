@@ -49,4 +49,4 @@ else
   echo "Check:  systemctl status jarvis   and   journalctl -u jarvis-tunnel -n 30"
 fi
 echo
-echo "Next: run  .venv/bin/python -m jarvis.configure  and set the public URL to  https://$DOMAIN"
+echo "Next: run  .venv/bin/python -m jarvis.configure  and enter the ngrok domain  $DOMAIN"

@@ -13,7 +13,8 @@ import sys
 
 import anthropic
 
-from .config import ROOT, claude_headers, settings, valid_telegram_token
+from .config import (ROOT, claude_headers, settings, valid_telegram_token, valid_twilio_sid,
+                     valid_twilio_token)
 
 SAFE_HEADERS = ("content-type", "content-length", "server", "request-id", "cf-ray", "via", "x-cache")
 
@@ -94,6 +95,31 @@ def check_telegram() -> None:
     print("  -> Message exactly that @username. Search it in Telegram, or open t.me/<username>.")
 
 
+def check_phone() -> None:
+    """Phone-call settings (secrets never printed) and whether Twilio can reach Jarvis."""
+    import httpx
+
+    section("Phone calls")
+    if not any([settings.twilio_sid, settings.twilio_token, settings.ngrok_domain]):
+        line("status", "not set up (optional)")
+        return
+    line("Account SID", "looks valid" if valid_twilio_sid(settings.twilio_sid) else "LOOKS WRONG - re-enter it")
+    line("Auth Token", "looks valid" if valid_twilio_token(settings.twilio_token) else "LOOKS WRONG - re-enter it")
+    for label, num in (("Twilio number", settings.twilio_from), ("your cell", settings.owner_phone)):
+        ok = num.startswith("+") and num[1:].isdigit() and len(num) >= 11
+        line(label, num if ok else f"'{num}' - needs + and country code, e.g. +15551234567")
+    line("public URL", settings.public_base_url or "MISSING - set your ngrok domain")
+    if settings.public_base_url:
+        try:
+            r = httpx.get(settings.public_base_url + "/", timeout=10,
+                          headers={"ngrok-skip-browser-warning": "1"})
+            reachable = r.status_code == 200 and "J.A.R.V.I.S." in r.text
+            line("reachable by Twilio", "yes" if reachable
+                 else f"NO (HTTP {r.status_code}) - is Jarvis running with the tunnel?")
+        except httpx.HTTPError as exc:
+            line("reachable by Twilio", f"NO ({type(exc).__name__}) - start Jarvis first, then rerun")
+
+
 def main() -> None:
     print("Jarvis connection checkup (safe to share)")
     section("System")
@@ -119,6 +145,7 @@ def main() -> None:
     line("workspace id", settings.workspace_id or "not set (fine if the key is scoped to a workspace)")
 
     check_telegram()
+    check_phone()
 
     client = anthropic.Anthropic(default_headers=claude_headers())
     section("Step 1: can we reach the API and see the model?")

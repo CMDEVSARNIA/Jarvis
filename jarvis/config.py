@@ -62,7 +62,11 @@ class Settings:
     twilio_token: str = _env("TWILIO_AUTH_TOKEN")
     twilio_from: str = _env("TWILIO_FROM_NUMBER")
     owner_phone: str = _env("OWNER_PHONE_NUMBER")
-    public_base_url: str = _env("PUBLIC_BASE_URL").rstrip("/")
+    # Your free static ngrok domain; Jarvis starts the tunnel itself on a PC.
+    ngrok_domain: str = field(default_factory=lambda: _clean_domain(_env("NGROK_DOMAIN")))
+    public_base_url: str = field(default_factory=lambda: (
+        _env("PUBLIC_BASE_URL").rstrip("/")
+        or (f"https://{_clean_domain(_env('NGROK_DOMAIN'))}" if _env("NGROK_DOMAIN") else "")))
     twilio_voice: str = _env("TWILIO_VOICE", "Polly.Brian")
     # Caller ID can be spoofed, so calls INTO Jarvis are off unless you opt in.
     allow_inbound_calls: bool = _env("ALLOW_INBOUND_CALLS", "false").lower() == "true"
@@ -80,6 +84,24 @@ class Settings:
         )
 
 
+
+
+def _clean_domain(value: str) -> str:
+    value = value.strip()
+    for prefix in ("https://", "http://"):
+        if value.startswith(prefix):
+            value = value[len(prefix):]
+    return value.rstrip("/")
+
+
+def valid_twilio_sid(value: str) -> bool:
+    import re
+    return bool(re.fullmatch(r"AC[0-9a-fA-F]{32}", value))
+
+
+def valid_twilio_token(value: str) -> bool:
+    import re
+    return bool(re.fullmatch(r"[0-9a-fA-F]{32}", value))
 
 
 def clean_chat_id(value: str) -> str:
