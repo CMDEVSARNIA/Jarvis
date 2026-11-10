@@ -88,7 +88,16 @@ async def run() -> None:
                 try:
                     await _handle(client, update)
                 except httpx.HTTPError as exc:  # message would include the token-bearing URL
-                    log.error("Telegram request failed: %s", type(exc).__name__)
+                    # Telegram's own "description" is safe to log; the URL is not.
+                    resp = getattr(exc, "response", None)
+                    desc = ""
+                    if resp is not None:
+                        try:
+                            desc = resp.json().get("description", "")
+                        except ValueError:
+                            pass
+                    log.error("Telegram request failed: %s %s %s", type(exc).__name__,
+                              getattr(resp, "status_code", ""), desc)
                 except Exception:
                     log.exception("Failed to handle Telegram update")
 
@@ -108,8 +117,11 @@ async def _handle(client: httpx.AsyncClient, update: dict) -> None:
             "then restart Jarvis."))
         return
     if chat_id != settings.telegram_owner_chat_id:
-        log.warning("Ignoring Telegram message from unknown chat %s", chat_id)
+        log.warning("Ignoring Telegram message from chat %s: the saved owner chat id is %s. "
+                    "If that's you, fix it with python -m jarvis.configure",
+                    chat_id, settings.telegram_owner_chat_id)
         return
+    log.info("Telegram message received from the owner")
 
     if text == "/reset":
         brain.reset()
