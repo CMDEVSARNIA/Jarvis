@@ -50,6 +50,11 @@ async def run() -> None:
     _set_status(False, "connecting...")
     offset = 0
     async with httpx.AsyncClient() as client:
+        try:
+            # A webhook left on the bot (e.g. by another tool) stops getUpdates working.
+            await _call(client, "deleteWebhook")
+        except httpx.HTTPError:
+            pass  # the poll loop below reports the real problem
         while True:
             try:
                 data = await _call(client, "getUpdates", offset=offset, timeout=30,

@@ -64,6 +64,33 @@ def check_key() -> bool:
     return not problems
 
 
+def check_telegram() -> None:
+    """Which bot does the saved token belong to? (The token itself is never printed.)"""
+    import httpx
+
+    section("Telegram")
+    token = settings.telegram_token
+    if not token:
+        line("bot token", "MISSING - run python -m jarvis.configure")
+        return
+    line("chat id saved", settings.telegram_owner_chat_id or "not set (the bot will tell you yours)")
+    base = f"https://api.telegram.org/bot{token}/"
+    try:
+        me = httpx.get(base + "getMe", timeout=15)
+        if me.status_code in (401, 404):
+            line("bot token", "REJECTED by Telegram - copy it again from @BotFather")
+            return
+        bot = me.json().get("result", {})
+        line("token belongs to", f"@{bot.get('username')}  ({bot.get('first_name')})")
+        hook = httpx.get(base + "getWebhookInfo", timeout=15).json().get("result", {})
+        line("webhook", "was set - Jarvis clears it when it starts" if hook.get("url") else "none (good)")
+        line("waiting messages", hook.get("pending_update_count", "?"))
+    except httpx.HTTPError as exc:  # never print str(exc): it contains the token
+        line("result", f"could not reach Telegram ({type(exc).__name__})")
+        return
+    print("  -> Message exactly that @username. Search it in Telegram, or open t.me/<username>.")
+
+
 def main() -> None:
     print("Jarvis connection checkup (safe to share)")
     section("System")
@@ -87,6 +114,8 @@ def main() -> None:
 
     key_ok = check_key()
     line("workspace id", settings.workspace_id or "not set (fine if the key is scoped to a workspace)")
+
+    check_telegram()
 
     client = anthropic.Anthropic(default_headers=claude_headers())
     section("Step 1: can we reach the API and see the model?")
