@@ -45,7 +45,10 @@ async def run() -> None:
                 data = await _call(client, "getUpdates", offset=offset, timeout=30,
                                    allowed_updates=["message"])
             except (httpx.HTTPError, ValueError) as exc:
-                log.warning("Telegram poll failed: %s", exc)
+                # Don't log str(exc): it contains the request URL, which holds the bot token.
+                status = getattr(getattr(exc, "response", None), "status_code", None)
+                log.warning("Telegram poll failed: %s%s", type(exc).__name__,
+                            f" (HTTP {status})" if status else "")
                 await asyncio.sleep(5)
                 continue
 
@@ -53,6 +56,8 @@ async def run() -> None:
                 offset = update["update_id"] + 1
                 try:
                     await _handle(client, update)
+                except httpx.HTTPError as exc:  # message would include the token-bearing URL
+                    log.error("Telegram request failed: %s", type(exc).__name__)
                 except Exception:
                     log.exception("Failed to handle Telegram update")
 

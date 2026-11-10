@@ -41,6 +41,12 @@ can drive these tools, so each one is narrow. Add new ones in `jarvis/tools.py`.
 Mac/Linux: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && cp .env.example .env`,
 then `.venv/bin/python -m jarvis`.
 
+### Let Claude Code do the cloud setup
+
+On your laptop, open this folder in Claude Code and run `/jarvis-cloud-setup`. It creates the
+Google Cloud server with the right free-tier settings, installs Jarvis, and checks it's working.
+You still create your keys yourself and type them into the settings tool, never into the chat.
+
 ### No PC? Run it on a cloud server
 
 On a fresh Ubuntu VM: `git clone` this repo, then `bash deploy/setup-server.sh`,
