@@ -135,12 +135,57 @@ def yes(prompt: str) -> bool:
     return input(f"{prompt} (y/N): ").strip().lower().startswith("y")
 
 
+# Settings asked by --missing (after an update), in order: key, prompt, secret, default.
+MISSING_ORDER = [
+    ("ANTHROPIC_API_KEY", "Anthropic API key (hidden while typing)", True, ""),
+    ("JARVIS_MODEL", "", False, ""),
+    ("ANTHROPIC_WORKSPACE_ID", "Workspace ID (blank unless your key isn't scoped to a workspace)", False, ""),
+    ("OWNER_NAME", "What should Jarvis call you", False, "sir"),
+    ("HOME_LOCATION", "Your city, for weather (e.g. Toronto, Canada)", False, ""),
+    ("UNITS", "Units: metric or imperial", False, "metric"),
+    ("BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", False, "08:00"),
+    ("TELEGRAM_BOT_TOKEN", "Telegram bot token from @BotFather (hidden; blank to skip)", True, ""),
+]
+
+
+def _choose_model() -> None:
+    print("Which model?")
+    for n, (_, label) in MODELS.items():
+        print(f"  {n}) {label}")
+    choice = input("Choose 1-3 [1]: ").strip() or "1"
+    set_key(str(ENV), "JARVIS_MODEL", MODELS.get(choice, MODELS["1"])[0], quote_mode="never")
+
+
+def ask_missing(cur: dict) -> None:
+    """Only settings that are new since the last update (absent from .env), plus any
+    saved key that's clearly broken (e.g. a failed paste). Silent when there's none."""
+    todo = []
+    for key, prompt, secret, default in MISSING_ORDER:
+        check = VALIDATORS.get(key)
+        broken = bool(check and cur.get(key) and not check[0](cur[key]))
+        must = key == "ANTHROPIC_API_KEY" and not (check and check[0](cur.get(key, "")))
+        if key not in cur or broken or must:
+            todo.append((key, prompt, secret, default))
+    if not todo:
+        return
+    print("\nA few settings need your input (press Enter for the suggestion in brackets):")
+    for key, prompt, secret, default in todo:
+        if key == "JARVIS_MODEL":
+            _choose_model()
+        else:
+            ask(cur, key, prompt, secret=secret, default=default)
+    print("Saved.\n")
+
+
 def main() -> None:
     if not ENV.exists():
         shutil.copy(ROOT / ".env.example", ENV)
     if os.name != "nt":
         os.chmod(ENV, 0o600)  # only you can read your keys
     cur = {k: (v or "") for k, v in dotenv_values(ENV).items()}
+    if "--missing" in sys.argv:
+        ask_missing(cur)
+        return
 
     print("Jarvis setup. Press Enter to keep a value, type - to clear it.")
 

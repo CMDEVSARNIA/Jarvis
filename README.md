@@ -49,6 +49,13 @@ can drive these tools, so each one is narrow. Add new ones in `jarvis/tools.py`.
 
 **Full step-by-step guide (PC, cloud server, Telegram, phone calls): [docs/Jarvis-Setup-Guide.pdf](docs/Jarvis-Setup-Guide.pdf)**
 
+## Updates
+
+`start-jarvis.bat` updates Jarvis every time it starts: it checks GitHub, downloads only when
+something changed, installs any new components, and asks only for settings that are new.
+Your `.env`, `data/` (reminders, lists, memory), `config/apps.json` and `ngrok.exe` are never
+overwritten. Turn it off with `AUTO_UPDATE=false` in `.env`.
+
 ## Setup (Windows)
 
 1. Install Python 3.10+ from python.org (tick "Add to PATH").
