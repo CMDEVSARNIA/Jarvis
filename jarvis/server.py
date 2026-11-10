@@ -59,7 +59,8 @@ def _status() -> dict:
         "type": "status",
         "cpu": psutil.cpu_percent(interval=None),
         "mem": psutil.virtual_memory().percent,
-        "telegram": settings.telegram_enabled and bool(settings.telegram_owner_chat_id),
+        "telegram": telegram_bot.status[0],
+        "telegram_status": telegram_bot.status[1],
         "phone": settings.phone_enabled,
         "model": settings.model,
     }

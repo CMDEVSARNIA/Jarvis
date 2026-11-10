@@ -69,7 +69,7 @@ body {
 
 .links { list-style: none; margin: 0; padding: 0; font-size: 13px; }
 .links li { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
-.links em { color: var(--muted); font-style: normal; font-size: 11px; margin-left: auto; }
+.links em { color: var(--muted); font-style: normal; font-size: 11px; margin-left: auto; text-align: right; max-width: 150px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red); }
 .dot.on { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
 

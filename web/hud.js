@@ -265,6 +265,7 @@
         $("cpu-bar").style.width = ev.cpu + "%"; $("cpu-val").textContent = Math.round(ev.cpu) + "%";
         $("mem-bar").style.width = ev.mem + "%"; $("mem-val").textContent = Math.round(ev.mem) + "%";
         $("link-telegram").classList.toggle("on", ev.telegram);
+        $("telegram-status").textContent = ev.telegram_status || "";
         $("link-phone").classList.toggle("on", ev.phone);
         $("call-me").disabled = !ev.phone;
         $("model-name").textContent = ev.model;
