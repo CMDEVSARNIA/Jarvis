@@ -14,7 +14,9 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 WEB_DIR = ROOT / "web"
 
-load_dotenv(ROOT / ".env")
+# .env is the source of truth: it beats any stale ANTHROPIC_API_KEY etc. set in
+# the system environment (e.g. a Windows user variable from an earlier attempt).
+load_dotenv(ROOT / ".env", override=True)
 
 
 def _env(name: str, default: str = "") -> str:
