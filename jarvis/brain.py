@@ -181,8 +181,13 @@ class Brain:
 def _api_error_detail(exc: anthropic.APIStatusError) -> str:
     """The API's own explanation (it never contains the API key)."""
     body = exc.body if isinstance(exc.body, dict) else {}
-    message = (body.get("error") or {}).get("message") or str(exc)
-    return message[:300]
+    error = body.get("error")
+    message = error.get("message") if isinstance(error, dict) else None
+    if not message and not (exc.response.text or "").strip():
+        # Anthropic always explains its errors; an empty reply came from something
+        # in between (proxy, antivirus, a redirected base URL) or a mangled request.
+        return "the server sent no explanation. Run: python -m jarvis.doctor"
+    return (message or str(exc))[:300]
 
 
 def _text_of(content: list[Any]) -> str:
