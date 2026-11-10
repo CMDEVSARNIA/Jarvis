@@ -171,9 +171,19 @@ def main() -> None:
     except Exception as exc:
         describe_error(exc)
 
+    section("Step 4: streamed reply (how Jarvis talks now)")
+    try:
+        pieces: list[str] = []
+        r = asyncio.run(brain._stream(
+            [{"role": "user", "content": "[via hud | test] Say: one, two, three."}],
+            lambda ev: pieces.append(ev.get("text", "")) if ev["type"] == "partial" else None))
+        line("result", f"OK - {len(pieces)} pieces streamed, stop_reason={r.stop_reason}")
+    except Exception as exc:
+        describe_error(exc)
+
     section("How to read this")
     print("  Step 1 fails      -> network, proxy, base URL or key problem (see the sections above)")
-    print("  Only step 3 fails -> a setting in Jarvis's own request; send this report to Claude")
+    print("  Only step 3 or 4 fails -> a setting in Jarvis's own request; send this report to Claude")
     print("  All OK            -> restart Jarvis; it should work now")
     print("  'anthropic-workspace-id' in an error -> your key isn't scoped to a workspace. Either")
     print("     create a new key scoped to a workspace (Console > API keys > Create key), or copy the")
