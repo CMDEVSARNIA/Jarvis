@@ -140,6 +140,7 @@
     div.append(label, document.createTextNode(text));
     $("log").append(div);
     $("log").scrollTop = $("log").scrollHeight;
+    return div;
   }
   function addActivity(html) {
     const li = document.createElement("li");
@@ -165,18 +166,37 @@
     voice = pickVoice();
   }
 
-  function speak(text) {
+  // Speech is queued sentence by sentence, so Jarvis starts talking while
+  // Claude is still writing the rest of the reply.
+  let speechPending = 0;
+  const idleCallbacks = [];
+  function cleanForSpeech(t) {
+    return t.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/https?:\/\/\S+/g, "the link")
+            .replace(/[*_#`>]+/g, "").replace(/\s+/g, " ").trim();
+  }
+  function enqueueSpeech(text) {
+    text = cleanForSpeech(text);
+    if (!text) return;
     $("caption").textContent = text;
-    if (!$("voice-on").checked || !("speechSynthesis" in window)) { setState("idle"); return; }
-    speechSynthesis.cancel();
+    if (!$("voice-on").checked || !("speechSynthesis" in window)) return;
     const u = new SpeechSynthesisUtterance(text);
     if (voice) u.voice = voice;
-    u.rate = 1.02; u.pitch = 0.9;
+    u.rate = 1.04; u.pitch = 0.9;
+    speechPending++;
     u.onstart = () => { pauseRecognitionForSpeech(true); setState("speaking"); };
     u.onboundary = () => { speakingPulse = 0.9; };
-    u.onend = u.onerror = () => { setState("idle"); pauseRecognitionForSpeech(false); };
+    u.onend = u.onerror = () => { speechPending = Math.max(0, speechPending - 1); if (!speechPending) speechIdle(); };
     speechSynthesis.speak(u);
   }
+  function speechIdle() {
+    if (speechPending) return;
+    if (state === "speaking") setState("idle");
+    pauseRecognitionForSpeech(false);
+    idleCallbacks.splice(0).forEach((fn) => fn());
+  }
+  function whenSpeechDone(fn) { if (speechPending) idleCallbacks.push(fn); else fn(); }
+  function stopSpeaking() { idleCallbacks.length = 0; speechPending = 0; speechSynthesis.cancel(); }
+  function speak(text) { enqueueSpeech(text); if (!speechPending) setState("idle"); }
 
   // Speech recognition (Chrome / Edge).
   //
@@ -203,6 +223,7 @@
     rec.interimResults = true;
     rec.continuous = true;
     rec.onresult = (e) => {
+      if (!mode) return;                 // not listening any more: ignore stragglers
       interimText = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
@@ -213,7 +234,8 @@
       const text = currentText();
       if (text) $("caption").textContent = text;
       clearTimeout(silenceTimer);
-      if (mode !== "hold") silenceTimer = setTimeout(finishUtterance, PAUSE_MS);
+      clearTimeout(followupTimer);
+      if (mode !== "hold") silenceTimer = setTimeout(finishUtterance, pauseFor(text, !interimText));
     };
     rec.onstart = () => { recActive = true; if (mode && mode !== "wake") setState("listening"); };
     rec.onend = () => {
@@ -231,25 +253,55 @@
     $("mic").title = "Speech recognition needs Chrome or Edge";
   }
 
+  // Send sooner when the sentence sounds finished, wait longer when it trails off.
+  const TRAILING = /\b(and|or|but|so|um+|uh+|erm|like|the|a|an|to|of|with|because|that|is|my|your|for|in|on|at|if|then|also)$/i;
+  function pauseFor(text, settled) {
+    if (TRAILING.test(text)) return PAUSE_MS * 1.6;
+    const words = text.split(/\s+/).length;
+    if (settled && (words >= 3 || (mode === "followup" && words >= 1))) return Math.max(900, PAUSE_MS * 0.6);
+    return PAUSE_MS;
+  }
+
+  // Conversation mode: after a spoken answer, listen for a follow-up without
+  // needing the wake word or a button. Silence or "that's all" ends it.
+  const FOLLOWUP_MS = 7000;
+  const END_PHRASES = /^(that'?s (all|it)|thanks?( you)?( jarvis)?|thank you( jarvis)?|goodbye|bye|stop|never ?mind|no thanks?|nothing( else)?)[.!]?$/i;
+  let followupTimer = null, lastInputVoice = false;
+  function maybeFollowup(channel) {
+    if (channel !== "hud" || !lastInputVoice || !$("convo-on").checked || !rec) return;
+    if (mode && mode !== "wake") return;            // already listening some other way
+    startSession("followup");
+    $("caption").textContent = "Listening…";
+    followupTimer = setTimeout(() => {
+      if (mode === "followup" && !currentText()) { stopSession(); $("caption").textContent = ""; }
+    }, FOLLOWUP_MS);
+  }
+
   function finishUtterance() {
     clearTimeout(silenceTimer);
     const was = mode;               // decide using the mode the words were spoken in
     let text = currentText();
     clearHeard();
-    if (was === "tap") stopSession();
+    if (was === "tap" || was === "followup") stopSession();
     if (!text) return;
+    if ((was === "followup" || was === "tap") && END_PHRASES.test(text)) {
+      lastInputVoice = false;
+      enqueueSpeech("Very good.");
+      return;
+    }
     if (was === "wake") {
       const m = text.match(/\bjarvis\b[,.!?]?\s*(.*)$/i);
       if (!m) { $("caption").textContent = ""; return; }   // not addressed to Jarvis
       text = m[1].trim();
       if (!text) { speak("Yes?"); return; }
     }
-    send(text);
+    send(text, true);
   }
 
   function startSession(newMode) {
     if (!rec) return;
-    speechSynthesis.cancel();
+    if (newMode !== "followup") stopSpeaking();      // pressing talk interrupts Jarvis
+    clearTimeout(followupTimer);
     clearHeard();
     mode = newMode;
     if (!recActive) { try { rec.start(); } catch { /* already running */ } }
@@ -261,7 +313,7 @@
     if (state === "listening") setState("idle");
   }
   function pauseRecognitionForSpeech(pause) {
-    if (!rec || !wantContinuous) return;
+    if (!rec || (!mode && !pausedForSpeech)) return;
     pausedForSpeech = pause;
     if (pause && recActive) rec.stop();
     if (!pause && !recActive && mode) { try { rec.start(); } catch { /* ignore */ } }
@@ -322,11 +374,32 @@
       case "user":
         if (ev.channel !== "hud" && ev.channel !== "briefing") addMsg("user", ev.text, ev.channel);
         break;
-      case "reply":
-        addMsg("jarvis", ev.text, ev.channel);
-        if (ev.channel === "hud" || ev.channel === "briefing") speak(ev.text); else setState("idle", false);
+      case "partial":
+        onPartial(ev);
         break;
+      case "reply": {
+        const t = turns[ev.turn];
+        const spokenChannel = ev.channel === "hud" || ev.channel === "briefing";
+        if (t && t.text) {
+          if (t.buf.trim()) enqueueSpeech(t.buf);
+          if (!t.text.includes(ev.text.trim().slice(0, 40))) {   // e.g. an error after partial text
+            addMsg("jarvis", ev.text, ev.channel);
+            if (spokenChannel) enqueueSpeech(ev.text);
+          }
+        } else {
+          addMsg("jarvis", ev.text, ev.channel);
+          if (spokenChannel) enqueueSpeech(ev.text);
+        }
+        delete turns[ev.turn];
+        if (!speechPending) setState("idle", false);
+        if (spokenChannel) whenSpeechDone(() => maybeFollowup(ev.channel));
+        break;
+      }
       case "tool":
+        if (ev.channel === "hud" || ev.channel === "briefing") {
+          const t = turnOf(ev);
+          if (!t.spoke && FILLERS[ev.name]) { enqueueSpeech(FILLERS[ev.name]); t.spoke = true; }
+        }
         addMsg("tool", `${ev.name} ${JSON.stringify(ev.input)}`);
         addActivity(`<b>${esc(ev.name.toUpperCase())}</b> ${esc(JSON.stringify(ev.input)).slice(0, 80)}`);
         break;
@@ -368,6 +441,31 @@
     $("dash-weather").textContent = d.weather || "--";
     fillList("dash-upcoming", d.upcoming, "No reminders");
     fillList("dash-todo", d.todo, "Nothing on the list");
+  }
+
+  // ------------------------------------------------------ streamed turns --
+  const turns = {};   // turn id -> { buf, text, spoke, el }
+  const FILLERS = {
+    get_weather: "Checking the weather.", web_search: "Let me look that up.",
+    web_fetch: "Reading the page.", show_on_screen: "Pulling that up.",
+    show_map: "Bringing up the map.", run_protocol: "Running it now.", system_status: "One moment.",
+  };
+  function turnOf(ev) { return turns[ev.turn] || (turns[ev.turn] = { buf: "", text: "", spoke: false, el: null }); }
+  function onPartial(ev) {
+    const t = turnOf(ev);
+    t.text += ev.text; t.buf += ev.text;
+    if (!t.el) t.el = addMsg("jarvis", "", ev.channel);
+    t.el.lastChild.textContent = t.text;
+    $("log").scrollTop = $("log").scrollHeight;
+    let m;
+    while ((m = t.buf.match(/^([\s\S]*?[.!?…])(\s+)/)) || (m = t.buf.match(/^([^\n]+)(\n+)/))) {
+      enqueueSpeech(m[1]); t.spoke = true;
+      t.buf = t.buf.slice(m[0].length);
+    }
+    if (t.buf.length > 180) {             // very long sentence: break at a comma
+      const cut = t.buf.lastIndexOf(", ");
+      if (cut > 60) { enqueueSpeech(t.buf.slice(0, cut + 1)); t.spoke = true; t.buf = t.buf.slice(cut + 2); }
+    }
   }
 
   // ------------------------------------------------------------- viewer --
@@ -413,8 +511,9 @@
   $("viewer-reader").addEventListener("click", () => requestView(viewerUrl, true));
   $("viewer-close").addEventListener("click", () => showViewer({ mode: "close" }));
 
-  function send(text) {
+  function send(text, viaVoice = false) {
     if (!text || !socket || socket.readyState !== 1) return;
+    lastInputVoice = viaVoice;
     addMsg("user", text, "hud");
     $("caption").textContent = "";
     setState("thinking", false);

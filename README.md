@@ -29,6 +29,11 @@ remembered at the desk.
 - `save_protocol`, `run_protocol`, `list_protocols`, `delete_protocol`: named routines such as
   "work mode", built only from the actions above
 
+Talking to Jarvis feels like a conversation: replies are streamed and spoken sentence by
+sentence while Claude is still writing, a short acknowledgment plays while tools run, and after
+a spoken answer Jarvis listens for a follow-up without the wake word (say "that's all" to end).
+It waits longer when you trail off ("so I was thinking...") and less when a question sounds done.
+
 Jarvis also greets you when the HUD opens, gives a daily briefing (weather, reminders, to-dos)
 at `BRIEFING_TIME` on the PC and Telegram, shows live weather/reminder/to-do panels, and
 remembers your recent conversations across restarts (`data/transcript.jsonl`).

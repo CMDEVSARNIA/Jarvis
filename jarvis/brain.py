@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -28,7 +29,9 @@ efficient, like a seasoned British butler who happens to run the house's compute
 Each user message starts with a tag like [via hud | Mon 09 Nov 2026 14:02]. The channel tells
 you how your reply will be delivered:
 - "hud" or "call": your reply is SPOKEN aloud. Keep it to one to three short sentences,
-  conversational, no markdown, no lists, no URLs read out character by character.
+  conversational, no markdown, no lists, no URLs read out character by character. Speech
+  starts as soon as your first sentence is written, so make the first sentence short. If you
+  need a tool, a brief "One moment." style line before it is fine; don't narrate the steps.
 - "telegram": your reply is a text message. Brief, plain text, light formatting at most.
 - "briefing": the owner asked for their daily briefing; it is SPOKEN aloud. Greet them by
   time of day, then cover weather (and what to wear or bring), today's reminders and to-dos
@@ -76,10 +79,11 @@ class Brain:
                 content = self._preamble() + content
             self.messages.append({"role": "user", "content": content})
 
-            events.publish({"type": "user", "channel": channel, "text": text})
+            turn = uuid.uuid4().hex[:8]
+            events.publish({"type": "user", "channel": channel, "text": text, "turn": turn})
             events.publish({"type": "state", "state": "thinking"})
             try:
-                reply = await self._run_loop()
+                reply = await self._run_loop(channel, turn)
             except anthropic.APIConnectionError:
                 reply = "I can't reach my servers at the moment. Check the internet connection."
                 self._rollback_turn()
@@ -89,7 +93,7 @@ class Brain:
             except anthropic.AuthenticationError:
                 reply = "My API key was rejected. Check ANTHROPIC_API_KEY in the .env file."
                 self._rollback_turn()
-            except anthropic.APIStatusError as exc:
+            except anthropic.APIStatusError as exc:  # (APIError below catches mid-stream failures)
                 detail = _api_error_detail(exc)
                 log.error("Claude API error %s: %s", exc.status_code, detail)
                 if "credit balance" in detail.lower():
@@ -103,8 +107,12 @@ class Brain:
                 else:
                     reply = f"Something went wrong on my end (error {exc.status_code}): {detail}"
                 self._rollback_turn()
+            except anthropic.APIError as exc:
+                log.error("Claude stream failed: %s", type(exc).__name__)
+                reply = "I lost the connection partway through. Could you say that again?"
+                self._rollback_turn()
             self._log_exchange(channel, text, reply)
-            events.publish({"type": "reply", "channel": channel, "text": reply})
+            events.publish({"type": "reply", "channel": channel, "text": reply, "turn": turn})
             events.publish({"type": "state", "state": "idle"})
             return reply
 
@@ -170,9 +178,40 @@ class Brain:
             **extra,
         )
 
-    async def _run_loop(self) -> str:
+    async def _stream(self, messages: list[dict[str, Any]], on_event) -> Any:
+        """Like _create, but streams, so text can be spoken while it's still being
+        written. Tool inputs are NOT streamed eagerly: they're tiny here, and leaving
+        that off keeps the API's strict schema validation of them."""
+        async with self.client.beta.messages.stream(
+            model=settings.model,
+            max_tokens=16000,
+            system=SYSTEM_PROMPT,
+            tools=TOOLS,
+            messages=messages,
+            output_config={"effort": settings.effort},
+            cache_control={"type": "ephemeral"},
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
+        ) as stream:
+            async for event in stream:
+                if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                    on_event({"type": "partial", "text": event.delta.text})
+                elif event.type == "content_block_start" and \
+                        event.content_block.type == "server_tool_use":
+                    on_event({"type": "tool", "name": event.content_block.name, "input": {}})
+            return await stream.get_final_message()
+
+    async def _run_loop(self, channel: str = "hud", turn: str = "") -> str:
+        spoken = channel in ("hud", "briefing")
+
+        def on_event(ev: dict) -> None:
+            # Text deltas only go to the HUD for spoken channels; tool notices always do.
+            if ev["type"] == "partial" and not spoken:
+                return
+            events.publish({**ev, "channel": channel, "turn": turn})
+
         for _ in range(12):  # hard cap on tool round-trips per utterance
-            response = await self._create(self.messages)
+            response = await self._stream(self.messages, on_event)
             self.messages.append({"role": "assistant", "content": response.content})
 
             if response.stop_reason == "refusal":
@@ -186,7 +225,8 @@ class Brain:
             for block in response.content:
                 if block.type != "tool_use":
                     continue
-                events.publish({"type": "tool", "name": block.name, "input": block.input})
+                events.publish({"type": "tool", "name": block.name, "input": block.input,
+                                "channel": channel, "turn": turn})
                 output, is_error = await run_tool(block.name, block.input)
                 results.append(
                     {
