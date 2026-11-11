@@ -56,6 +56,14 @@ can drive these tools, so each one is narrow. Add new ones in `jarvis/tools.py`.
 
 **Full step-by-step guide (PC, cloud server, Telegram, phone calls): [docs/Jarvis-Setup-Guide.pdf](docs/Jarvis-Setup-Guide.pdf)**
 
+## Desktop
+
+On Windows, `start-jarvis.bat` checks for updates and then runs Jarvis in the background with a
+tray icon (Open, Check for updates, Restart, Start with Windows, Open log, Quit); logs go to
+`data/jarvis.log`. Press Ctrl+Alt+Space in any app to talk (`TALK_HOTKEY`). Reminders and nudges
+become Windows notifications when the Jarvis window is closed. A Jarvis desktop shortcut is
+created on first run. `start-jarvis.bat --console` keeps the old console window.
+
 ## Updates
 
 `start-jarvis.bat` updates Jarvis every time it starts: it checks GitHub, downloads only when

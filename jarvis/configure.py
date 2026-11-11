@@ -146,6 +146,7 @@ MISSING_ORDER = [
     ("BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", False, "08:00"),
     ("TELEGRAM_BOT_TOKEN", "Telegram bot token from @BotFather (hidden; blank to skip)", True, ""),
     ("RECAP_TIME", "Evening recap time, 24h HH:MM (- to turn off)", False, "21:00"),
+    ("START_WITH_WINDOWS", "Start Jarvis automatically when Windows starts? (yes/no)", False, "no"),
     ("CALENDAR_ICS_URL", "Calendar's secret iCal link (hidden; blank to skip)", True, ""),
 ]
 
@@ -210,6 +211,7 @@ def main() -> None:
     ask(cur, "UNITS", "Units: metric or imperial", default="metric")
     ask(cur, "BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", default="08:00")
     ask(cur, "RECAP_TIME", "Evening recap time, 24h HH:MM (- to turn off)", default="21:00")
+    ask(cur, "START_WITH_WINDOWS", "Start Jarvis automatically when Windows starts? (yes/no)", default="no")
     print("Calendar: paste your calendar's secret iCal link (Google: Settings > your calendar >")
     print("  'Secret address in iCal format'). Leave blank to skip.")
     ask(cur, "CALENDAR_ICS_URL", "Calendar iCal link (hidden)", secret=True)

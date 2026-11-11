@@ -22,6 +22,7 @@ log = logging.getLogger("jarvis.server")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    events.LOOP = asyncio.get_running_loop()
     tasks = [asyncio.create_task(telegram_bot.run()),
              asyncio.create_task(reminders.run_scheduler()),
              asyncio.create_task(briefing.run()),

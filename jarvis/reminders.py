@@ -117,6 +117,9 @@ async def _deliver(item: dict[str, Any], late_by: timedelta) -> None:
     text = f"{prefix}: {item['text']}{late}"
     log.info("Delivering %s %s", prefix.lower(), item["id"])
     events.publish({"type": "reminder", "text": text})
+    if events.listeners() == 0:  # Jarvis window closed: show a Windows notification
+        from . import desktop
+        desktop.notify("Jarvis reminder", text)
     try:
         await telegram_bot.send_to_owner(text)
     except Exception as exc:  # never let one failed send stop the scheduler

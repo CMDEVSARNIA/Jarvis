@@ -7,6 +7,18 @@ import asyncio
 from typing import Any
 
 _subscribers: set[asyncio.Queue] = set()
+LOOP: asyncio.AbstractEventLoop | None = None  # set by the server at startup
+
+
+def listeners() -> int:
+    """How many HUD windows are connected."""
+    return len(_subscribers)
+
+
+def publish_threadsafe(event: dict[str, Any]) -> None:
+    """publish() from another thread (the hotkey or tray threads)."""
+    if LOOP is not None:
+        LOOP.call_soon_threadsafe(publish, event)
 
 
 def subscribe() -> asyncio.Queue:

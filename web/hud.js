@@ -414,6 +414,9 @@
       case "activity":
         addActivity(`<b>${esc(ev.label)}</b> ${esc(ev.text)}`);
         break;
+      case "listen":                       // the global talk hotkey
+        if (rec && mode !== "tap") startSession("tap");
+        break;
       case "memory":
         renderMemory(ev.facts || []);
         break;

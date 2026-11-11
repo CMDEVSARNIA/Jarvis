@@ -156,6 +156,7 @@
   <p class="lead">Jarvis starts speaking as soon as its first sentence is ready, and keeps listening for your follow-up after it answers, so it feels like a conversation, not a walkie-talkie.</p>
   <table class="table">
     <tr><th>WAY TO TALK</th><th>HOW IT WORKS</th></tr>
+    <tr><td><span class="kbd">Ctrl</span>+<span class="kbd">Alt</span>+<span class="kbd">Space</span></td><td>Talk from <b>any app</b>: Jarvis comes to the front and listens.</td></tr>
     <tr><td>Hold <span class="kbd">Space</span></td><td>Listens the whole time you hold it, even through long pauses. Sends when you let go. Best for long questions.</td></tr>
     <tr><td>Click <b>MIC</b></td><td>Listens until you've been quiet for a moment, then sends. Click again to send immediately.</td></tr>
     <tr><td><b>WAKE WORD</b> on</td><td>Always listening: start with “Jarvis…”. Background talk without “Jarvis” is ignored.</td></tr>
@@ -290,17 +291,17 @@
 
   <h2>Changing settings</h2>
   <p>In the Jarvis folder: click the address bar, type <span class="cmd">cmd</span>, press Enter, then run <span class="cmd">.venv\Scripts\python -m jarvis.configure</span>. Press Enter to keep an answer, type <span class="cmd">-</span> to clear one. It covers your key, model, name, city, units, briefing and recap times, Telegram and calendar.</p>
-  <p style="color:var(--muted);font-size:12px">Extra options in <span class="cmd">.env</span>: <span class="cmd">NUDGES=false</span> (no nudges) · <span class="cmd">HUD_FULLSCREEN=true</span> · <span class="cmd">AUTO_UPDATE=false</span></p>
+  <p style="color:var(--muted);font-size:12px">Extra options in <span class="cmd">.env</span>: <span class="cmd">TALK_HOTKEY=ctrl+shift+j</span> · <span class="cmd">NUDGES=false</span> · <span class="cmd">HUD_FULLSCREEN=true</span> · <span class="cmd">AUTO_UPDATE=false</span></p>
 
   <h2>Updates &amp; help</h2>
   <table class="table">
     <tr><th>SITUATION</th><th>DO THIS</th></tr>
-    <tr><td>Getting new features</td><td>Nothing: <b>start-jarvis.bat</b> updates Jarvis every time it starts. It asks only about new settings.</td></tr>
-    <tr><td>Something isn't working</td><td>Double-click <b>checkup.bat</b>. It checks your key, Telegram, phone and Claude connection, and is safe to photograph and share.</td></tr>
-    <tr><td>Jarvis says an error on screen</td><td>It explains the cause in plain words. If not, send a photo of the black Jarvis window and the checkup report.</td></tr>
+    <tr><td>Getting new features</td><td>Automatic each start, or tray icon → <b>Check for updates</b>. It asks only about new settings.</td></tr>
+    <tr><td>Something isn't working</td><td>Double-click <b>checkup.bat</b> (safe to photograph and share), and tray icon → <b>Open log</b>.</td></tr>
+    <tr><td>Want the old console window?</td><td>Run <span class="cmd">start-jarvis.bat --console</span> to see live logs.</td></tr>
     <tr><td>Windows-only features don't respond</td><td>Screen, clipboard, PC control and media keys need Jarvis running on your Windows laptop.</td></tr>
   </table>
-  <div class="callout"><span class="t">KEEP THE BLACK WINDOW OPEN</span>That window is Jarvis. Minimize it, but closing it shuts Jarvis down, including reminders and nudges.</div>
+  <div class="callout"><span class="t">JARVIS LIVES IN THE TRAY</span>Jarvis runs in the background with a round icon near the clock (click <b>^</b> if it's hidden). Closing the Jarvis window doesn't stop it: reminders and nudges become Windows notifications. Right-click the icon for <b>Open</b>, <b>Check for updates</b>, <b>Restart</b>, <b>Start with Windows</b>, <b>Open log</b> and <b>Quit</b>.</div>
 
   <div class="foot"><span>FEATURE GUIDE · REFERENCE</span><span>06</span></div>
 </section>

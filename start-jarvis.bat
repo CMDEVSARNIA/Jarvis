@@ -1,5 +1,6 @@
 @echo off
-REM Double-click to start Jarvis on Windows. It checks for updates first.
+REM Double-click to start Jarvis. It checks for updates, then runs in the tray.
+REM Add --console to keep this window open with live logs instead.
 cd /d "%~dp0"
 if exist start-jarvis.new.bat (
   move /y start-jarvis.new.bat start-jarvis.bat >nul
@@ -12,4 +13,4 @@ if not exist .venv\Scripts\python.exe (
   .venv\Scripts\python -m pip install -q --disable-pip-version-check -r requirements.txt
 )
 .venv\Scripts\python -m jarvis.launcher %*
-pause
+if errorlevel 1 pause

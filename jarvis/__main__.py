@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+from pathlib import Path
 import logging
 import os
 import shutil
@@ -78,30 +79,121 @@ def start_tunnel() -> str:
     return f"https://{settings.ngrok_domain}"
 
 
-def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
+def _pythonw() -> str:
+    """The console-less Python next to this one (Windows), else this Python."""
+    candidate = Path(sys.executable).with_name("pythonw.exe")
+    return str(candidate) if candidate.exists() else sys.executable
+
+
+def _setup_logging(tray: bool) -> None:
+    if tray:
+        # No console in tray mode: everything goes to data/jarvis.log (Tray > Open log).
+        from logging.handlers import RotatingFileHandler
+
+        (ROOT / "data").mkdir(exist_ok=True)
+        handler = RotatingFileHandler(ROOT / "data" / "jarvis.log", maxBytes=1_000_000,
+                                      backupCount=3, encoding="utf-8")
+        logging.basicConfig(level=logging.INFO, handlers=[handler],
+                            format="%(asctime)s %(name)s: %(message)s")
+        sys.stdout = sys.stderr = handler.stream
+    else:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
     # httpx logs every request URL, and Telegram puts the bot token in the URL.
     # Keep those out of the logs so they're safe to read or share.
     for noisy in ("httpx", "httpx2", "httpcore"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
+
+
+def _fail(tray: bool, *lines: str) -> None:
+    if tray:
+        from . import desktop
+        desktop.message_box("Jarvis can't start", "\n".join(lines))
+    for line in lines:
+        print(line)
+    sys.exit(1)
+
+
+def run_tray(url: str, open_browser: bool) -> None:
+    """Windows: run the server in the background with a tray icon instead of a console."""
+    import time
+
+    from . import desktop, events, updater
+
+    log = logging.getLogger("jarvis")
+    server = uvicorn.Server(uvicorn.Config("jarvis.server:app", host=settings.host,
+                                           port=settings.port, log_level="warning"))
+    thread = threading.Thread(target=server.run, name="server", daemon=True)
+    thread.start()
+    for _ in range(200):
+        if server.started or not thread.is_alive():
+            break
+        time.sleep(0.1)
+    if not server.started:
+        _fail(True, f"Port {settings.port} is busy: Jarvis is probably already running.",
+              "Look for the Jarvis icon in the tray, near the clock.")
+    if open_browser:
+        open_hud(url)
+
+    def show() -> None:
+        if not desktop.bring_hud_to_front():
+            open_hud(url)
+
+    def on_hotkey() -> None:
+        if desktop.bring_hud_to_front():
+            events.publish_threadsafe({"type": "listen"})
+        else:  # wait for the page to load and connect before asking it to listen
+            open_hud(url)
+            threading.Timer(4.0, events.publish_threadsafe, args=[{"type": "listen"}]).start()
+
+    log.info("Talk hotkey: %s", desktop.start_hotkey(settings.talk_hotkey, on_hotkey))
+    threading.Thread(target=desktop.ensure_desktop_shortcut, daemon=True).start()
+
+    def relaunch() -> None:
+        """Stop this copy and start again through the launcher (updates + new components)."""
+        server.should_exit = True
+        thread.join(15)
+        subprocess.Popen(["cmd", "/c", "start", "/min", "", str(ROOT / "start-jarvis.bat"),
+                          "--no-browser"], cwd=ROOT, creationflags=0x00000008)  # DETACHED_PROCESS
+        desktop.stop_tray()
+
+    def check_updates() -> None:
+        message = updater.update()
+        desktop.notify("Jarvis", message)
+        if message.startswith("Updated"):
+            time.sleep(3)
+            relaunch()
+
+    def quit_jarvis() -> None:
+        server.should_exit = True
+        desktop.stop_tray()
+
+    desktop.run_tray(on_open=show, on_restart=relaunch, on_update=check_updates, on_quit=quit_jarvis)
+    server.should_exit = True
+    thread.join(10)
+
+
+def main() -> None:
+    tray = "--tray" in sys.argv and sys.platform == "win32"
+    _setup_logging(tray)
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY is not set. Run:  python -m jarvis.configure")
-        sys.exit(1)
+        _fail(tray, "ANTHROPIC_API_KEY is not set. Run:  python -m jarvis.configure")
     if not valid_anthropic_key(os.environ["ANTHROPIC_API_KEY"]):
-        print("Your saved Claude API key doesn't look right (it may not have pasted).")
-        print("Run:  python -m jarvis.configure   and paste it again.")
-        sys.exit(1)
+        _fail(tray, "Your saved Claude API key doesn't look right (it may not have pasted).",
+              "Run:  python -m jarvis.configure   and paste it again.")
 
     url = f"http://localhost:{settings.port}/?token={settings.hud_token}"
     print("\n  J.A.R.V.I.S. online")
     headless = "--no-browser" in sys.argv
     # On a server the output lands in the system log; keep the HUD token out of it.
-    print(f"  HUD:       {'local only (token in data/hud_token)' if headless else url}")
+    print(f"  HUD:       {'local only (token in data/hud_token)' if headless or tray else url}")
     print(f"  Telegram:  {'on' if settings.telegram_enabled else 'off'}")
     print(f"  Phone:     {'on' if settings.phone_enabled else 'off'}")
     if not headless:  # servers run the tunnel as its own service (deploy/setup-ngrok.sh)
         print(f"  Tunnel:    {start_tunnel()}")
     print()
+    if tray:
+        run_tray(url, open_browser=not headless)
+        return
     if not headless:
         threading.Timer(1.5, open_hud, args=[url]).start()
 

@@ -43,6 +43,9 @@ async def deliver(text: str) -> None:
     from . import telegram_bot
 
     events.publish({"type": "reminder", "text": text})
+    if events.listeners() == 0:
+        from . import desktop
+        desktop.notify("Jarvis", text)
     try:
         await telegram_bot.send_to_owner(text)
     except Exception as exc:
