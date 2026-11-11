@@ -722,6 +722,11 @@
       phone's browser will let Huxley use the microphone.</p>
       <ol><li>Open <a href="${esc(r.link)}" target="_blank" rel="noopener">this link</a> and press <b>Enable</b>
       (or turn on <b>MagicDNS</b> and <b>HTTPS Certificates</b>).</li><li>Press <b>TRY AGAIN</b>.</li></ol>`,
+    restart: () => `<p>Huxley's screen has updated, but the program behind it is still the old version.</p>
+      <ol><li>Right-click the green <b>H</b> near the clock → <b>Restart Huxley</b>.</li>
+      <li>Wait about 20 seconds, open Huxley again, and press <b>PAIR PHONE</b>.</li>
+      <li>Still this message? Quit Huxley from the tray, end any <b>Python</b> entries in Task Manager,
+        then run <b>start-huxley.bat</b>.</li></ol>`,
     error: (r) => `<p>Tailscale said:</p><p class="note">${esc(r.detail || "unknown error")}</p>
       <p>Press <b>TRY AGAIN</b>. If it keeps happening, take a photo of this and send it to Claude.</p>`,
     ready: (r) => `<div class="pair-ready">
@@ -746,7 +751,9 @@
     let r;
     try {
       const resp = await fetch("/api/phone/pair", { method: "POST", headers: { "x-jarvis-token": token } });
-      r = resp.ok ? await resp.json() : { state: "error", detail: `Huxley said ${resp.status}` };
+      r = resp.ok ? await resp.json()
+        : resp.status === 404 ? { state: "restart" }
+        : { state: "error", detail: `Huxley said ${resp.status}` };
     } catch (e) { r = { state: "error", detail: String(e) }; }
     body.innerHTML = (PAIR_STEPS[r.state] || PAIR_STEPS.error)(r) +
       (r.state === "ready" ? "" : `<button type="button" class="pill" id="pair-retry">[ TRY AGAIN ]</button>`);
