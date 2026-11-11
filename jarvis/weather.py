@@ -140,6 +140,32 @@ async def precipitation_soon(hours: int = 4):
     return best
 
 
+async def hourly_outlook(hours: int = 8) -> list[dict]:
+    """[{'h': '15', 'p': 70, 'kind': 'RAIN'}, ...] for the next few hours at home."""
+    try:
+        place = await find_place(settings.home_location)
+        if not place:
+            return []
+        params = {"latitude": place["latitude"], "longitude": place["longitude"], "timezone": "auto",
+                  "current": "weather_code", "hourly": "precipitation_probability,weather_code",
+                  "forecast_days": 2}
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(FORECAST, params=params)
+            r.raise_for_status()
+            data = r.json()
+    except (httpx.HTTPError, ValueError, KeyError):
+        return []
+    now = datetime.fromisoformat(data["current"]["time"]).replace(minute=0)
+    out = []
+    h = data["hourly"]
+    for t, chance, code in zip(h["time"], h["precipitation_probability"], h["weather_code"]):
+        when = datetime.fromisoformat(t)
+        if now <= when < now + timedelta(hours=hours):
+            out.append({"h": f"{when:%H}", "p": int(chance or 0),
+                        "kind": "SNOW" if code in SNOW_CODES else "RAIN"})
+    return out
+
+
 async def current_summary() -> str:
     """One short line for the HUD panel, e.g. 'light rain, 3°C'."""
     try:

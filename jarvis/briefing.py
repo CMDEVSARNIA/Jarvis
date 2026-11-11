@@ -21,7 +21,7 @@ STATE_FILE = DATA_DIR / "state.json"
 
 _lock = asyncio.Lock()
 _greeted = False
-dashboard: dict = {"weather": "", "upcoming": [], "todo": [], "today": [], "memory": []}
+dashboard: dict = {"weather": "", "upcoming": [], "todo": [], "today": [], "memory": [], "rain_hours": []}
 
 
 def _state() -> dict:
@@ -116,6 +116,7 @@ async def run() -> None:
                 await give_briefing(send_telegram=True)
             if now - last_weather > timedelta(minutes=20) and settings.home_location:
                 dashboard["weather"] = await weather.current_summary()
+                dashboard["rain_hours"] = await weather.hourly_outlook(8)
                 last_weather = now
             dashboard["upcoming"] = reminders.upcoming(limit=3)
             lists = reminders.all_lists()

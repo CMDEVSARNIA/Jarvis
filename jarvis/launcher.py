@@ -47,7 +47,7 @@ def _already_running() -> bool:
     port = os.environ.get("PORT", "8000")
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2) as r:
-            return b"J.A.R.V.I.S." in r.read(4000)
+            return b"jarvis-hud" in r.read(4000)
     except OSError:
         return False
 

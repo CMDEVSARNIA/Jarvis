@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 import psutil
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import briefing, events, memory, nudges, phone, reminders, telegram_bot, viewer
@@ -49,8 +49,15 @@ def _authorised(token: str | None, headers) -> bool:
 
 
 @app.get("/")
-async def index() -> FileResponse:
-    return FileResponse(WEB_DIR / "index.html")
+async def index() -> HTMLResponse:
+    from html import escape
+
+    page = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+    theme = settings.hud_theme if settings.hud_theme in ("phosphor", "classic") else "phosphor"
+    page = (page.replace("{{DISPLAY_NAME}}", escape(settings.display_name))
+                .replace("{{NAME}}", escape(settings.assistant_name.strip() or "Jarvis"))
+                .replace("{{THEME}}", theme))
+    return HTMLResponse(page, headers={"Cache-Control": "no-store"})
 
 
 @app.post("/api/call-me")

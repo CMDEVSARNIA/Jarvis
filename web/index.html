@@ -3,115 +3,131 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>J.A.R.V.I.S.</title>
+  <meta name="jarvis-hud" content="1">
+  <title>{{DISPLAY_NAME}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/static/hud.css">
   <link rel="icon" href="/static/icon.png">
 </head>
-<body>
-  <div class="scanlines" aria-hidden="true"></div>
+<body data-theme="{{THEME}}" data-name="{{NAME}}" data-display-name="{{DISPLAY_NAME}}">
+  <div class="crt" aria-hidden="true"></div>
 
   <header class="top">
-    <div class="brand">J.A.R.V.I.S.<span>Just A Rather Very Intelligent System</span></div>
+    <div class="brand"><span id="brand-name">{{DISPLAY_NAME}}</span><small>HOME TERMINAL</small></div>
     <div class="state" id="state-label">STANDBY</div>
-    <div class="clock"><div id="clock-time">--:--:--</div><div id="clock-date"></div></div>
+    <ul class="links">
+      <li><span class="dot" id="link-core"></span>CORE <em id="model-name"></em></li>
+      <li><span class="dot" id="link-telegram"></span>TELEGRAM <em id="telegram-status"></em></li>
+      <li><span class="dot" id="link-phone"></span>PHONE</li>
+    </ul>
   </header>
 
   <main class="grid">
-    <section class="panel left">
-      <h2>SYSTEM</h2>
-      <div class="meter"><label>CPU</label><div class="bar"><i id="cpu-bar"></i></div><b id="cpu-val">--</b></div>
-      <div class="meter"><label>MEM</label><div class="bar"><i id="mem-bar"></i></div><b id="mem-val">--</b></div>
+    <div class="col">
+      <section class="module">
+        <h2>&gt; CHRONO</h2>
+        <div class="chrono" id="clock-time">--:--</div>
+        <div class="small" id="clock-date"></div>
+      </section>
+      <section class="module">
+        <h2>&gt; ATMOS</h2>
+        <p class="dash" id="dash-weather">--</p>
+        <div class="rainbars" id="dash-rain" role="img" aria-label="Chance of rain over the next hours"></div>
+        <p class="small" id="dash-rain-note"></p>
+      </section>
+      <section class="module">
+        <h2>&gt; SYSTEM</h2>
+        <div class="meter"><span>CPU</span><div class="bar"><i id="cpu-bar"></i></div><b id="cpu-val">--</b></div>
+        <div class="meter"><span>MEM</span><div class="bar"><i id="mem-bar"></i></div><b id="mem-val">--</b></div>
+      </section>
+      <section class="module grow">
+        <h2>&gt; TASKS</h2>
+        <ul class="dashlist" id="dash-todo"><li class="empty">NOTHING ON THE LIST</li></ul>
+      </section>
+    </div>
 
-      <h2>LINKS</h2>
-      <ul class="links">
-        <li><span class="dot" id="link-core"></span>Core <em id="model-name"></em></li>
-        <li><span class="dot" id="link-telegram"></span>Telegram <em id="telegram-status"></em></li>
-        <li><span class="dot" id="link-phone"></span>Phone</li>
-      </ul>
-
-      <h2>WEATHER</h2>
-      <p class="dash" id="dash-weather">--</p>
-
-      <h2>TODAY</h2>
-      <ul class="dashlist" id="dash-today"><li class="empty">No calendar connected</li></ul>
-
-      <h2>UPCOMING</h2>
-      <ul class="dashlist" id="dash-upcoming"><li class="empty">No reminders</li></ul>
-
-      <h2>TO-DO</h2>
-      <ul class="dashlist" id="dash-todo"><li class="empty">Nothing on the list</li></ul>
-
-      <h2>ACTIVITY</h2>
-      <ul class="activity" id="activity"></ul>
-    </section>
-
-    <section class="core">
-      <canvas id="reactor" aria-label="Jarvis status visualisation"></canvas>
-      <div class="caption" id="caption"></div>
-
-      <div class="viewer" id="viewer" hidden>
-        <div class="viewer-bar">
-          <span class="viewer-mode" id="viewer-mode">PAGE</span>
-          <form id="viewer-form" class="viewer-form" autocomplete="off">
-            <label for="viewer-url" class="sr-only">Web address</label>
-            <input id="viewer-url" placeholder="Type a web address and press Enter">
-          </form>
-          <button type="button" class="vbtn" id="viewer-reader" title="Show as clean text">READER</button>
-          <a class="vbtn" id="viewer-external" href="#" target="_blank" rel="noopener noreferrer" title="Open in a browser tab">BROWSER</a>
-          <button type="button" class="vbtn" id="viewer-close" aria-label="Close the page">CLOSE</button>
+    <section class="module core">
+      <h2 class="scope-head"><span>&gt; SCOPE · VOICE</span><span id="scope-state">● IDLE</span></h2>
+      <div class="scope">
+        <canvas id="reactor" aria-label="Voice activity"></canvas>
+        <div class="viewer" id="viewer" hidden>
+          <div class="viewer-bar">
+            <span class="viewer-mode" id="viewer-mode">PAGE</span>
+            <form id="viewer-form" class="viewer-form" autocomplete="off">
+              <label for="viewer-url" class="sr-only">Web address</label>
+              <input id="viewer-url" placeholder="TYPE A WEB ADDRESS AND PRESS ENTER">
+            </form>
+            <button type="button" class="vbtn" id="viewer-reader" title="Show as clean text">READER</button>
+            <a class="vbtn" id="viewer-external" href="#" target="_blank" rel="noopener noreferrer" title="Open in a browser tab">BROWSER</a>
+            <button type="button" class="vbtn" id="viewer-close" aria-label="Close the page">CLOSE</button>
+          </div>
+          <iframe id="viewer-frame" title="Web page" hidden
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          <article class="reader" id="viewer-reader-body" hidden></article>
         </div>
-        <iframe id="viewer-frame" title="Web page" hidden
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        <article class="reader" id="viewer-reader-body" hidden></article>
       </div>
+      <div class="caption" id="caption" aria-live="polite"></div>
     </section>
 
-    <section class="panel right">
-      <h2>TRANSCRIPT</h2>
-      <div class="log" id="log"></div>
-    </section>
+    <div class="col">
+      <section class="module">
+        <h2>&gt; SCHEDULE</h2>
+        <h3>TODAY</h3>
+        <ul class="dashlist" id="dash-today"><li class="empty">NO CALENDAR CONNECTED</li></ul>
+        <h3>REMINDERS</h3>
+        <ul class="dashlist" id="dash-upcoming"><li class="empty">NONE SET</li></ul>
+      </section>
+      <section class="module grow">
+        <h2>&gt; COMMS LOG</h2>
+        <div class="log" id="log"></div>
+      </section>
+    </div>
   </main>
 
   <footer class="controls">
-    <button id="mic" class="round" title="Hold Space or click to talk">MIC</button>
+    <button id="mic" class="talk" title="Click, hold Space, or press Ctrl+Alt+Space anywhere">[ TALK ]</button>
     <form id="chat-form" autocomplete="off">
-      <input id="chat-input" placeholder="Speak, or type a command..." aria-label="Message Jarvis">
+      <label for="chat-input" class="sr-only">Command</label>
+      <input id="chat-input" placeholder="&gt; ENTER COMMAND_">
     </form>
-    <label class="toggle" title="Listen continuously; say 'Jarvis ...' to address him">
-      <input type="checkbox" id="always-listen"> WAKE WORD
-    </label>
-    <label class="toggle"><input type="checkbox" id="voice-on" checked> VOICE</label>
-    <label class="toggle" title="After answering, keep listening for a follow-up"><input type="checkbox" id="convo-on" checked> CONVERSATION</label>
-    <label class="toggle" title="How long a pause means you've finished talking">WAIT
-      <select id="pause-length" class="pause-select">
-        <option value="1500">1.5s</option>
-        <option value="2500">2.5s</option>
-        <option value="4000">4s</option>
-        <option value="6000">6s</option>
-      </select>
-    </label>
-    <button id="think" class="pill" aria-pressed="false" title="Give the next question much more thought">THINK HARDER</button>
-    <button id="memory-btn" class="pill" title="What Jarvis remembers about you">MEMORY</button>
-    <button id="briefing" class="pill" title="Hear today's briefing">BRIEFING</button>
-    <button id="call-me" class="pill" title="Have Jarvis ring your phone">CALL MY PHONE</button>
-    <button id="reset" class="pill ghost" title="Clear conversation">RESET</button>
+    <div class="switches">
+      <label class="toggle" title="After answering, keep listening for a follow-up"><input type="checkbox" id="convo-on" checked>CONVO</label>
+      <label class="toggle" title="Listen continuously for the assistant's name"><input type="checkbox" id="always-listen">WAKE</label>
+      <label class="toggle" title="Speak replies aloud"><input type="checkbox" id="voice-on" checked>VOICE</label>
+      <label class="toggle" title="How long a pause means you've finished talking">WAIT
+        <select id="pause-length" class="pause-select">
+          <option value="1500">1.5S</option>
+          <option value="2500">2.5S</option>
+          <option value="4000">4S</option>
+          <option value="6000">6S</option>
+        </select>
+      </label>
+    </div>
+    <div class="buttons">
+      <button id="think" class="pill" aria-pressed="false" title="Give the next question much more thought">[ THINK+ ]</button>
+      <button id="memory-btn" class="pill" title="What the assistant remembers about you">[ MEMORY ]</button>
+      <button id="briefing" class="pill" title="Hear today's briefing">[ BRIEFING ]</button>
+      <button id="call-me" class="pill" title="Ring your phone">[ CALL ]</button>
+      <button id="reset" class="pill ghost" title="Clear the conversation">[ RESET ]</button>
+    </div>
   </footer>
 
   <div class="modal" id="memory-modal" hidden role="dialog" aria-modal="true" aria-labelledby="memory-title">
     <div class="modal-box">
       <div class="modal-head">
-        <h2 id="memory-title">WHAT JARVIS REMEMBERS</h2>
+        <h2 id="memory-title">&gt; MEMORY BANK</h2>
         <button type="button" class="vbtn" id="memory-close">CLOSE</button>
       </div>
-      <p class="modal-note">Jarvis saves lasting facts you mention. Remove anything you don't want kept.</p>
+      <p class="modal-note">LASTING FACTS YOU'VE MENTIONED. REMOVE ANYTHING YOU DON'T WANT KEPT.</p>
       <ul class="memlist" id="memory-list"></ul>
     </div>
   </div>
 
   <div class="locked" id="locked" hidden>
-    <p>Access token missing or invalid.</p>
-    <p>Open the HUD link printed in the Jarvis console window.</p>
+    <p>ACCESS KEY MISSING OR INVALID.</p>
+    <p>OPEN THE ASSISTANT FROM ITS TRAY ICON OR DESKTOP SHORTCUT.</p>
   </div>
 
   <script src="/static/hud.js"></script>

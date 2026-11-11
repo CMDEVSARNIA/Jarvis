@@ -141,6 +141,7 @@ MISSING_ORDER = [
     ("JARVIS_MODEL", "", False, ""),
     ("ANTHROPIC_WORKSPACE_ID", "Workspace ID (blank unless your key isn't scoped to a workspace)", False, ""),
     ("OWNER_NAME", "What should Jarvis call you", False, "sir"),
+    ("ASSISTANT_NAME", "Your assistant's name (also its wake word)", False, "Jarvis"),
     ("HOME_LOCATION", "Your city, for weather (e.g. Toronto, Canada)", False, ""),
     ("UNITS", "Units: metric or imperial", False, "metric"),
     ("BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", False, "08:00"),
@@ -207,6 +208,8 @@ def main() -> None:
     if ws and not ws.startswith("wrkspc_"):
         print("  Warning: workspace IDs start with wrkspc_ - check you copied the ID, not the name.")
     ask(cur, "OWNER_NAME", "What should Jarvis call you", default="sir")
+    ask(cur, "ASSISTANT_NAME", "Your assistant's name (also its wake word)", default="Jarvis")
+    ask(cur, "HUD_THEME", "Screen style: phosphor (green terminal) or classic (cyan)", default="phosphor")
     ask(cur, "HOME_LOCATION", "Your city, for weather (e.g. Toronto, Canada)")
     ask(cur, "UNITS", "Units: metric or imperial", default="metric")
     ask(cur, "BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", default="08:00")

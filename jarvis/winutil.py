@@ -13,7 +13,11 @@ import time
 CF_UNICODETEXT = 13
 GMEM_MOVEABLE = 0x0002
 SW_MINIMIZE, SW_RESTORE = 6, 9
-JARVIS_TITLE = "J.A.R.V.I.S."
+
+
+def _title() -> str:
+    from .config import settings
+    return settings.display_name
 
 
 def _require_windows() -> None:
@@ -106,7 +110,7 @@ def jarvis_windows() -> list[int]:
             length = user32.GetWindowTextLengthW(hwnd)
             buf = ctypes.create_unicode_buffer(length + 1)
             user32.GetWindowTextW(hwnd, buf, length + 1)
-            if buf.value.startswith(JARVIS_TITLE):
+            if buf.value.startswith(_title()):
                 found.append(hwnd)
         return True
 

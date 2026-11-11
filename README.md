@@ -56,6 +56,13 @@ can drive these tools, so each one is narrow. Add new ones in `jarvis/tools.py`.
 
 **Full step-by-step guide (PC, cloud server, Telegram, phone calls): [docs/Jarvis-Setup-Guide.pdf](docs/Jarvis-Setup-Guide.pdf)**
 
+## Look and name
+
+The screen defaults to a green CRT terminal (`HUD_THEME=phosphor`): live voice oscilloscope,
+hourly rain chart, schedule and comms log, all in capitals. `HUD_THEME=classic` brings back the
+cyan look. `ASSISTANT_NAME` renames the assistant everywhere: screen, window title, how Claude
+refers to itself, and the wake word.
+
 ## Desktop
 
 On Windows, `start-jarvis.bat` checks for updates and then runs Jarvis in the background with a

@@ -194,7 +194,8 @@ def run_tray(on_open: Callable[[], None], on_restart: Callable[[], None],
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quit Jarvis", lambda icon, item: on_quit()),
     )
-    _tray = pystray.Icon("jarvis", Image.open(TRAY_IMAGE), "J.A.R.V.I.S.", menu)
+    from .config import settings
+    _tray = pystray.Icon("jarvis", Image.open(TRAY_IMAGE), settings.display_name, menu)
     try:
         _tray.run()
     finally:

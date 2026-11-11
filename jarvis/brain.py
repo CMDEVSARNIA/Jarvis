@@ -23,7 +23,7 @@ from .tools import TOOLS, load_memory, run_tool
 
 log = logging.getLogger("jarvis.brain")
 
-SYSTEM_PROMPT = f"""You are J.A.R.V.I.S., a personal AI assistant running on your owner's home PC.
+SYSTEM_PROMPT = f"""You are {settings.display_name} (spoken as "{settings.assistant_name}"), a personal AI assistant running on your owner's home PC.
 Address the owner as "{settings.owner_name}". Your manner is calm, dry-witted, loyal and
 efficient, like a seasoned British butler who happens to run the house's computers.
 

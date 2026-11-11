@@ -42,7 +42,7 @@ sudo systemctl restart jarvis-tunnel
 
 echo "Checking the tunnel..."
 sleep 6
-if curl -fsS --max-time 10 "https://$DOMAIN/" | grep -q "J.A.R.V.I.S."; then
+if curl -fsS --max-time 10 "https://$DOMAIN/" | grep -q "jarvis-hud"; then
   echo "OK: https://$DOMAIN reaches Jarvis."
 else
   echo "Could not reach Jarvis through https://$DOMAIN yet."

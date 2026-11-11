@@ -182,7 +182,7 @@ def main() -> None:
               "Run:  python -m jarvis.configure   and paste it again.")
 
     url = f"http://localhost:{settings.port}/?token={settings.hud_token}"
-    print("\n  J.A.R.V.I.S. online")
+    print(f"\n  {settings.display_name} online")
     headless = "--no-browser" in sys.argv
     # On a server the output lands in the system log; keep the HUD token out of it.
     print(f"  HUD:       {'local only (token in data/hud_token)' if headless or tray else url}")

@@ -48,6 +48,8 @@ class Settings:
     model: str = _env("JARVIS_MODEL", "claude-opus-5-5")
     effort: str = _env("JARVIS_EFFORT", "low")
     owner_name: str = _env("OWNER_NAME", "sir")
+    assistant_name: str = _env("ASSISTANT_NAME", "Jarvis")   # what you call it (and the wake word)
+    hud_theme: str = _env("HUD_THEME", "phosphor").lower()    # phosphor | classic
     home_location: str = _env("HOME_LOCATION")          # e.g. "Toronto, Canada"
     units: str = _env("UNITS", "metric").lower()        # metric | imperial
     timezone: str = _env("JARVIS_TIMEZONE")
@@ -80,6 +82,12 @@ class Settings:
     allow_inbound_calls: bool = _env("ALLOW_INBOUND_CALLS", "false").lower() == "true"
 
     apps: dict[str, str] = field(default_factory=_load_apps)
+
+    @property
+    def display_name(self) -> str:
+        """How the name is shown: Jarvis keeps its dotted acronym, others go upper case."""
+        name = self.assistant_name.strip() or "Jarvis"
+        return "J.A.R.V.I.S." if name.lower() == "jarvis" else name.upper()
 
     @property
     def telegram_enabled(self) -> bool:

@@ -113,7 +113,7 @@ def check_phone() -> None:
         try:
             r = httpx.get(settings.public_base_url + "/", timeout=10,
                           headers={"ngrok-skip-browser-warning": "1"})
-            reachable = r.status_code == 200 and "J.A.R.V.I.S." in r.text
+            reachable = r.status_code == 200 and "jarvis-hud" in r.text
             line("reachable by Twilio", "yes" if reachable
                  else f"NO (HTTP {r.status_code}) - is Jarvis running with the tunnel?")
         except httpx.HTTPError as exc:

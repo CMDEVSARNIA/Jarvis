@@ -1,4 +1,4 @@
-/* J.A.R.V.I.S. HUD: reactor animation, voice in/out, and the link to the brain. */
+/* The HUD: voice scope (or classic reactor), voice in/out, and the link to the brain. */
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
@@ -16,7 +16,11 @@
   let state = "idle";            // idle | listening | thinking | speaking
   let level = 0;                 // 0..1 audio energy driving the core
   let speakingPulse = 0;
-  const labels = { idle: "STANDBY", listening: "LISTENING", thinking: "PROCESSING", speaking: "SPEAKING" };
+  const labels = { idle: "STANDBY", listening: "LISTENING", thinking: "PROCESSING", speaking: "TRANSMITTING" };
+  const THEME = document.body.dataset.theme === "classic" ? "classic" : "phosphor";
+  const NAME = (document.body.dataset.name || "Jarvis").trim();
+  const NAME_UP = NAME.toUpperCase();
+  const NAME_RE = NAME.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   function setState(next, broadcast = true) {
     state = next;
@@ -24,14 +28,18 @@
     el.textContent = labels[next] || next.toUpperCase();
     el.className = "state " + next;
     $("mic").classList.toggle("active", next === "listening");
+    $("scope-state").textContent = "● " + (next === "idle" ? "IDLE" : (labels[next] || next.toUpperCase()));
     if (broadcast && socket && socket.readyState === 1) socket.send(JSON.stringify({ type: "state", state: next }));
   }
 
   // ---------------------------------------------------------------- clock --
   function tick() {
     const now = new Date();
-    $("clock-time").textContent = now.toLocaleTimeString([], { hour12: false });
-    $("clock-date").textContent = now.toLocaleDateString([], { weekday: "short", day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+    const pad = (n) => String(n).padStart(2, "0");
+    $("clock-time").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    $("clock-date").textContent = `${DAYS[now.getDay()]} ${pad(now.getDate())} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
   }
   setInterval(tick, 1000); tick();
 
@@ -56,7 +64,7 @@
     ctx.stroke();
   }
 
-  function draw(t) {
+  function drawReactor(t) {
     const s = t / 1000;
     ctx.clearRect(0, 0, W, H);
     const R = Math.min(W, H) * 0.42;
@@ -124,29 +132,98 @@
     arc(coreR * 0.75, 0, Math.PI * 2, 1.5, 0.6, accent);
 
     ctx.restore();
+  }
+
+  // Green CRT oscilloscope: your real mic waveform while listening, a speech-shaped
+  // trace while speaking, a sweeping sine while thinking, a quiet line at rest.
+  const cssVar = (n) => getComputedStyle(document.body).getPropertyValue(n).trim();
+  let FG = cssVar("--fg") || "#4dff88", GRID = cssVar("--line") || "#1d5c33", FAINT = cssVar("--faint") || "#1f7a44";
+  function drawScope(t) {
+    const s = t / 1000;
+    if (state === "speaking") speakingPulse = Math.max(speakingPulse * 0.92, 0.25 + 0.25 * Math.sin(s * 9) ** 2);
+    else speakingPulse *= 0.9;
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineWidth = 1; ctx.strokeStyle = FAINT; ctx.globalAlpha = 0.35; ctx.shadowBlur = 0;
+    ctx.beginPath();
+    for (let i = 1; i < 10; i++) { const x = (W * i) / 10; ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let i = 1; i < 8; i++) { const y = (H * i) / 8; ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+    ctx.globalAlpha = 0.8; ctx.strokeStyle = GRID; ctx.beginPath();
+    ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    const mid = H / 2, amp = H * 0.36, n = Math.max(160, Math.floor(W / 3));
+    const live = analyser && state === "listening";
+    if (live) analyser.getByteTimeDomainData(waveData);
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const x = (i / n) * W;
+      let y;
+      if (live) {
+        y = mid + ((waveData[Math.floor((i / n) * (waveData.length - 1))] - 128) / 128) * amp * 2.2;
+      } else if (state === "speaking") {
+        const env = 0.3 + 0.7 * speakingPulse;
+        y = mid + amp * env * (0.6 * Math.sin(i * 0.2 + s * 17) * Math.sin(i * 0.033 + s * 2.7) + 0.28 * Math.sin(i * 0.61 - s * 13));
+      } else if (state === "thinking") {
+        y = mid + amp * 0.4 * Math.sin(i * 0.07 - s * 8) * (0.55 + 0.45 * Math.sin(s * 2.4));
+      } else if (state === "listening") {
+        y = mid + amp * level * 0.6 * Math.sin(i * 0.3 + s * 21);
+      } else {
+        y = mid + Math.sin(i * 0.045 + s * 1.3) * 2 + (Math.random() - 0.5) * 1.4;
+      }
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.strokeStyle = FG; ctx.lineWidth = 2.5; ctx.shadowColor = FG; ctx.shadowBlur = 12;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  function draw(t) {
+    if (THEME === "classic") drawReactor(t); else drawScope(t);
     level *= 0.9;
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
 
+  // Real microphone waveform for the scope (only while listening).
+  let audioCtx = null, analyser = null, micStream = null, waveData = null;
+  async function startAnalyser() {
+    if (analyser || THEME === "classic" || !navigator.mediaDevices) return;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      audioCtx = new AudioContext();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      audioCtx.createMediaStreamSource(micStream).connect(analyser);
+      waveData = new Uint8Array(analyser.fftSize);
+    } catch { analyser = null; }
+  }
+  function stopAnalyser() {
+    if (micStream) micStream.getTracks().forEach((tr) => tr.stop());
+    if (audioCtx) audioCtx.close();
+    micStream = null; audioCtx = null; analyser = null;
+  }
+
   // ------------------------------------------------------------ transcript --
   function addMsg(kind, text, channel) {
     const div = document.createElement("div");
     div.className = "msg " + kind;
-    const who = kind === "user" ? "YOU" : kind === "tool" ? "ACTION" : "JARVIS";
-    const via = channel && channel !== "hud" ? ` · ${channel.toUpperCase()}` : "";
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const src = (channel && !["hud", "briefing", "reminder"].includes(channel) ? channel : "HUD").toUpperCase();
+    const who = kind === "user" ? `${src} ▸` : (kind === "tool" || kind === "sys") ? "SYS" : `${NAME_UP} ◂`;
     const label = document.createElement("span");
-    label.className = "who"; label.textContent = who + via;
+    label.className = "who"; label.textContent = `${hhmm} ${who}`;
     div.append(label, document.createTextNode(text));
     $("log").append(div);
     $("log").scrollTop = $("log").scrollHeight;
     return div;
   }
-  function addActivity(html) {
-    const li = document.createElement("li");
-    li.innerHTML = html;
-    $("activity").prepend(li);
-    while ($("activity").children.length > 30) $("activity").lastChild.remove();
+  function addActivity(html) {            // callers escape their variable parts
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    addMsg("sys", tmp.textContent);
+    while ($("log").children.length > 200) $("log").firstChild.remove();
   }
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -265,7 +342,7 @@
   // Conversation mode: after a spoken answer, listen for a follow-up without
   // needing the wake word or a button. Silence or "that's all" ends it.
   const FOLLOWUP_MS = 7000;
-  const END_PHRASES = /^(that'?s (all|it)|thanks?( you)?( jarvis)?|thank you( jarvis)?|goodbye|bye|stop|never ?mind|no thanks?|nothing( else)?)[.!]?$/i;
+  const END_PHRASES = new RegExp(`^(that'?s (all|it)|thanks?( you)?( ${NAME_RE})?|thank you( ${NAME_RE})?|goodbye|bye|stop|never ?mind|no thanks?|nothing( else)?)[.!]?$`, "i");
   let followupTimer = null, lastInputVoice = false;
   function maybeFollowup(channel) {
     if (channel !== "hud" || !lastInputVoice || !$("convo-on").checked || !rec) return;
@@ -290,7 +367,7 @@
       return;
     }
     if (was === "wake") {
-      const m = text.match(/\bjarvis\b[,.!?]?\s*(.*)$/i);
+      const m = text.match(new RegExp(`\\b${NAME_RE}\\b[,.!?]?\\s*(.*)$`, "i"));
       if (!m) { $("caption").textContent = ""; return; }   // not addressed to Jarvis
       text = m[1].trim();
       if (!text) { speak("Yes?"); return; }
@@ -304,11 +381,13 @@
     clearTimeout(followupTimer);
     clearHeard();
     mode = newMode;
+    startAnalyser();
     if (!recActive) { try { rec.start(); } catch { /* already running */ } }
     else if (mode !== "wake") setState("listening");
   }
   function stopSession() {
     mode = wantContinuous ? "wake" : null;
+    if (!mode) stopAnalyser();
     if (!mode && rec && recActive) rec.stop();
     if (state === "listening") setState("idle");
   }
@@ -335,7 +414,7 @@
   });
   $("always-listen").addEventListener("change", (e) => {
     wantContinuous = e.target.checked;
-    if (wantContinuous) { addActivity("<b>WAKE WORD</b> say “Jarvis …”"); startSession("wake"); }
+    if (wantContinuous) { addActivity(`<b>WAKE WORD</b> say “${esc(NAME)} …”`); startSession("wake"); }
     else { mode = null; clearHeard(); if (rec && recActive) rec.stop(); }
   });
   $("pause-length").value = String(PAUSE_MS);
@@ -400,15 +479,13 @@
           const t = turnOf(ev);
           if (!t.spoke && FILLERS[ev.name]) { enqueueSpeech(FILLERS[ev.name]); t.spoke = true; }
         }
-        addMsg("tool", `${ev.name} ${JSON.stringify(ev.input)}`);
-        addActivity(`<b>${esc(ev.name.toUpperCase())}</b> ${esc(JSON.stringify(ev.input)).slice(0, 80)}`);
+        addMsg("tool", `${ev.name.toUpperCase()} ${JSON.stringify(ev.input).slice(0, 80)}`);
         break;
       case "state":
         if (ev.state === "thinking" || (ev.state === "idle" && state === "thinking")) setState(ev.state, false);
         break;
       case "reminder":
         addMsg("jarvis", ev.text, "reminder");
-        addActivity(`<b>REMINDER</b> ${esc(ev.text)}`);
         speak(ev.text);
         break;
       case "activity":
@@ -443,7 +520,23 @@
       ul.append(li);
     }
   }
+  function renderRain(hours) {
+    const box = $("dash-rain");
+    box.replaceChildren();
+    for (const h of hours || []) {
+      const bar = document.createElement("span");
+      bar.style.height = Math.max(3, h.p) + "%";
+      if (h.p >= 50) bar.className = "wet";
+      bar.title = `${h.h}:00 · ${h.p}%`;
+      box.append(bar);
+    }
+    const wet = (hours || []).filter((h) => h.p >= 50);
+    $("dash-rain-note").textContent = !hours || !hours.length ? ""
+      : wet.length ? `${wet[0].kind || "RAIN"} ${wet[0].h}:00–${String((Number(wet[wet.length - 1].h) + 1) % 24).padStart(2, "0")}:00 · ${Math.max(...wet.map((h) => h.p))}%`
+      : "NO RAIN EXPECTED";
+  }
   function renderDashboard(d) {
+    renderRain(d.rain_hours);
     $("dash-weather").textContent = d.weather || "--";
     fillList("dash-upcoming", d.upcoming, "No reminders");
     fillList("dash-todo", d.todo, "Nothing on the list");
