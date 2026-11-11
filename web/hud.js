@@ -22,6 +22,24 @@
   const NAME_UP = NAME.toUpperCase();
   // The wake word, plus spellings speech recognition tends to produce for "Huxley".
   const NAME_RE = "(?:huxley|huxly|hucksley|huxleigh|hux ?lee|hugsley|huckley)";
+  // Phones and tablets: tap-to-talk only (no wake word), and no extra mic tap for the
+  // scope, which would compete with speech recognition for the microphone.
+  const MOBILE = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) && matchMedia("(pointer: coarse)").matches;
+  if (MOBILE) document.body.classList.add("mobile");
+
+  // Which window this is. Replies are spoken only on the screen that asked.
+  let clientId = "", remote = false;
+  const mine = (ev) => !ev.origin || ev.origin === clientId;
+
+  // ----------------------------------------------------------- phone tabs --
+  function showTab(name) {
+    document.body.dataset.tab = name;
+    document.querySelectorAll(".tabs [data-tab]").forEach((b) =>
+      b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+    store.set("jarvis-tab", name);
+    requestAnimationFrame(() => resize());
+  }
+  document.querySelectorAll(".tabs [data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
   function setState(next, broadcast = true) {
     state = next;
@@ -37,7 +55,7 @@
   function tick() {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    $("clock-time").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    $("clock-time").textContent = $("mini-clock").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
     const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     $("clock-date").textContent = `${DAYS[now.getDay()]} ${pad(now.getDate())} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
@@ -55,6 +73,7 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
   window.addEventListener("resize", resize); resize();
+  showTab(["talk", "day", "status"].includes(store.get("jarvis-tab")) ? store.get("jarvis-tab") : "talk");
 
   const CYAN = "79,209,255", AMBER = "255,181,71";
   function arc(r, a0, a1, width, alpha, color = CYAN) {
@@ -189,7 +208,7 @@
   // Real microphone waveform for the scope (only while listening).
   let audioCtx = null, analyser = null, micStream = null, waveData = null;
   async function startAnalyser() {
-    if (analyser || THEME === "classic" || !navigator.mediaDevices) return;
+    if (analyser || THEME === "classic" || MOBILE || !navigator.mediaDevices) return;
     try {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
       audioCtx = new AudioContext();
@@ -299,7 +318,9 @@
     rec = new SR();
     rec.lang = "en-GB";
     rec.interimResults = true;
-    rec.continuous = true;
+    // Android repeats words in continuous mode; there, each phrase is its own
+    // session and onend restarts it, which collects the words the same way.
+    rec.continuous = !MOBILE;
     rec.onresult = (e) => {
       if (!mode) return;                 // not listening any more: ignore stragglers
       interimText = "";
@@ -330,6 +351,7 @@
     $("always-listen").disabled = true;
     $("mic").title = "Speech recognition needs Chrome or Edge";
   }
+  if (MOBILE) $("always-listen").disabled = true;   // a wake word would beep all day on Android
 
   // Send sooner when the sentence sounds finished, wait longer when it trails off.
   const TRAILING = /\b(and|or|but|so|um+|uh+|erm|like|the|a|an|to|of|with|because|that|is|my|your|for|in|on|at|if|then|also)$/i;
@@ -345,8 +367,8 @@
   const FOLLOWUP_MS = 7000;
   const END_PHRASES = new RegExp(`^(that'?s (all|it)|thanks?( you)?( ${NAME_RE})?|thank you( ${NAME_RE})?|goodbye|bye|stop|never ?mind|no thanks?|nothing( else)?)[.!]?$`, "i");
   let followupTimer = null, lastInputVoice = false;
-  function maybeFollowup(channel) {
-    if (channel !== "hud" || !lastInputVoice || !$("convo-on").checked || !rec) return;
+  function maybeFollowup(ev) {
+    if (ev.channel !== "hud" || !mine(ev) || !lastInputVoice || !$("convo-on").checked || !rec) return;
     if (mode && mode !== "wake") return;            // already listening some other way
     startSession("followup");
     $("caption").textContent = "Listening…";
@@ -430,9 +452,10 @@
     if (!token) { $("locked").hidden = false; return; }
     const proto = location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}`);
-    socket.onopen = () => { retry = 0; $("link-core").classList.add("on"); };
+    socket.onopen = () => { retry = 0; $("link-core").classList.add("on"); setState(state, false); };
     socket.onclose = (e) => {
       $("link-core").classList.remove("on");
+      $("state-label").textContent = "NO LINK";   // e.g. the laptop is asleep
       if (e.code === 4403) { $("locked").hidden = false; return; }
       setTimeout(connect, Math.min(10000, 1000 * 2 ** retry++));
     };
@@ -441,6 +464,10 @@
 
   function onEvent(ev) {
     switch (ev.type) {
+      case "hello":
+        clientId = ev.client; remote = !!ev.remote;
+        document.body.classList.toggle("remote", remote);
+        break;
       case "status":
         $("cpu-bar").style.width = ev.cpu + "%"; $("cpu-val").textContent = Math.round(ev.cpu) + "%";
         $("mem-bar").style.width = ev.mem + "%"; $("mem-val").textContent = Math.round(ev.mem) + "%";
@@ -452,14 +479,16 @@
         if (ev.dashboard) renderDashboard(ev.dashboard);
         break;
       case "user":
-        if (ev.channel !== "hud" && ev.channel !== "briefing") addMsg("user", ev.text, ev.channel);
+        // Your own typing/speech is already shown; show what other screens asked.
+        if (ev.channel === "briefing" || (ev.channel === "hud" && mine(ev))) break;
+        addMsg("user", ev.text, ev.channel === "hud" ? (String(ev.origin).startsWith("m-") ? "mobile" : "desk") : ev.channel);
         break;
       case "partial":
         onPartial(ev);
         break;
       case "reply": {
         const t = turns[ev.turn];
-        const spokenChannel = ev.channel === "hud" || ev.channel === "briefing";
+        const spokenChannel = (ev.channel === "hud" || ev.channel === "briefing") && mine(ev);
         if (t && t.text) {
           if (t.buf.trim()) enqueueSpeech(t.buf);
           if (!t.text.includes(ev.text.trim().slice(0, 40))) {   // e.g. an error after partial text
@@ -472,11 +501,11 @@
         }
         delete turns[ev.turn];
         if (!speechPending) setState("idle", false);
-        if (spokenChannel) whenSpeechDone(() => maybeFollowup(ev.channel));
+        if (spokenChannel) whenSpeechDone(() => maybeFollowup(ev));
         break;
       }
       case "tool":
-        if (ev.channel === "hud" || ev.channel === "briefing") {
+        if ((ev.channel === "hud" || ev.channel === "briefing") && mine(ev)) {
           const t = turnOf(ev);
           if (!t.spoke && FILLERS[ev.name]) { enqueueSpeech(FILLERS[ev.name]); t.spoke = true; }
         }
@@ -492,8 +521,8 @@
       case "activity":
         addActivity(`<b>${esc(ev.label)}</b> ${esc(ev.text)}`);
         break;
-      case "listen":                       // the global talk hotkey
-        if (rec && mode !== "tap") startSession("tap");
+      case "listen":                       // the laptop's global talk hotkey
+        if (rec && !remote && mode !== "tap") startSession("tap");
         break;
       case "memory":
         renderMemory(ev.facts || []);
@@ -561,6 +590,7 @@
     if (!t.el) t.el = addMsg("jarvis", "", ev.channel);
     t.el.lastChild.textContent = t.text;
     $("log").scrollTop = $("log").scrollHeight;
+    if (!mine(ev)) { t.buf = ""; return; }   // asked on another screen: show, don't speak
     let m;
     while ((m = t.buf.match(/^([\s\S]*?[.!?…])(\s+)/)) || (m = t.buf.match(/^([^\n]+)(\n+)/))) {
       enqueueSpeech(m[1]); t.spoke = true;
@@ -675,6 +705,62 @@
     const data = await r.json().catch(() => ({}));
     addActivity(`<b>PHONE</b> ${esc(data.result || r.statusText)}`);
   });
+
+  // ----------------------------------------------------------- pair phone --
+  // Sets up Tailscale's private address on this laptop, then shows a QR code that
+  // opens Huxley on your phone (see jarvis/tailnet.py).
+  const PAIR_STEPS = {
+    install: (r) => `<p>Huxley reaches your phone through <b>Tailscale</b>, a free private network
+      between your own devices. Nobody else can see it.</p>
+      <ol><li>Install Tailscale on this laptop: <a href="${esc(r.link)}" target="_blank" rel="noopener">tailscale.com/download</a>,
+      and sign in (a Google account is fine).</li>
+      <li>Install <b>Tailscale</b> from the Play Store on your phone and sign in with the <b>same account</b>.</li>
+      <li>Press <b>TRY AGAIN</b>.</li></ol>`,
+    signin: (r) => `<p>Tailscale is installed but not connected (${esc(r.detail || "signed out")}).</p>
+      <ol><li>Click the Tailscale icon near the clock and sign in / connect.</li><li>Press <b>TRY AGAIN</b>.</li></ol>`,
+    enable_https: (r) => `<p>One switch to flip: your Tailscale account needs <b>HTTPS</b> turned on, so your
+      phone's browser will let Huxley use the microphone.</p>
+      <ol><li>Open <a href="${esc(r.link)}" target="_blank" rel="noopener">this link</a> and press <b>Enable</b>
+      (or turn on <b>MagicDNS</b> and <b>HTTPS Certificates</b>).</li><li>Press <b>TRY AGAIN</b>.</li></ol>`,
+    error: (r) => `<p>Tailscale said:</p><p class="note">${esc(r.detail || "unknown error")}</p>
+      <p>Press <b>TRY AGAIN</b>. If it keeps happening, take a photo of this and send it to Claude.</p>`,
+    ready: (r) => `<div class="pair-ready">
+        <div class="qr" role="img" aria-label="QR code for your phone">${r.qr || ""}</div>
+        <div><ol>
+          <li>On your phone, install <b>Tailscale</b> from the Play Store if you haven't, sign in with the <b>same account</b> as this laptop, and make sure it's <b>connected</b>.</li>
+          <li>Scan this code with the phone's camera and open the link in <b>Chrome</b>. The first load can take
+            up to a minute while Tailscale sets up the secure address.</li>
+          <li>In Chrome: <b>⋮ menu → Add to Home screen → Install</b>. Huxley gets its own icon.</li>
+          <li>Tap <b>[ TALK ]</b> and allow the microphone.</li>
+        </ol>
+        ${r.detail ? `<p class="note">${esc(r.detail)}</p>` : ""}
+        <p class="note">Only works while this laptop is on and Huxley is running. Keep this code private:
+          it contains your access key.</p>
+        <p class="pair-url">${esc(r.url || "")}</p></div>
+      </div>`,
+  };
+  async function pairPhone() {
+    const body = $("pair-body");
+    $("pair-modal").hidden = false;
+    body.innerHTML = "<p>CONTACTING TAILSCALE…</p>";
+    let r;
+    try {
+      const resp = await fetch("/api/phone/pair", { method: "POST", headers: { "x-jarvis-token": token } });
+      r = resp.ok ? await resp.json() : { state: "error", detail: `Huxley said ${resp.status}` };
+    } catch (e) { r = { state: "error", detail: String(e) }; }
+    body.innerHTML = (PAIR_STEPS[r.state] || PAIR_STEPS.error)(r) +
+      (r.state === "ready" ? "" : `<button type="button" class="pill" id="pair-retry">[ TRY AGAIN ]</button>`);
+    const retry = $("pair-retry");
+    if (retry) retry.addEventListener("click", pairPhone);
+  }
+  $("pair-btn").addEventListener("click", pairPhone);
+  $("pair-close").addEventListener("click", () => { $("pair-modal").hidden = true; });
+  $("pair-modal").addEventListener("click", (e) => { if (e.target.id === "pair-modal") $("pair-modal").hidden = true; });
+
+  // Installable app on phones: the service worker only shows an offline screen.
+  if ("serviceWorker" in navigator && window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    navigator.serviceWorker.register("/sw.js").catch(() => { /* not essential */ });
+  }
 
   connect();
 })();

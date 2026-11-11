@@ -72,6 +72,22 @@ tray icon (Open, Check for updates, Restart, Start with Windows, Open log, Quit)
 become Windows notifications when the Huxley window is closed. A Huxley desktop shortcut is
 created on first run. `start-huxley.bat --console` keeps the old console window.
 
+## On your phone
+
+The same green HUD runs on an Android phone, as an installable app with its own icon. It
+reaches Huxley on your laptop through [Tailscale](https://tailscale.com) (free), a private
+network between your own devices, so nothing is opened to the internet.
+
+1. Install Tailscale on the laptop and the phone, and sign in to both with the same account.
+2. In the HUD on the laptop, press **[ PAIR PHONE ]**. Huxley runs `tailscale serve` for you; if
+   your Tailscale account needs HTTPS switched on, it shows the one-click link.
+3. Scan the QR code with the phone, open it in Chrome, then **⋮ → Add to Home screen**.
+
+On a phone the HUD has COMMS / DAY / STATUS tabs and a big TALK button. Answers are spoken
+only on the screen you asked from. Limits: the laptop must be on with Huxley running, and the
+phone listens only while the app is open (no wake word there). `PHONE_PORT` (default: `PORT`+1,
+`0` = off) is the local port Tailscale forwards to.
+
 ## Updates
 
 `start-huxley.bat` updates Huxley every time it starts: it checks GitHub, downloads only when
@@ -130,6 +146,9 @@ can be spoofed. If you turn it on, point the Twilio number's "A call comes in" w
 
 - The HUD binds to `127.0.0.1` and needs a random token (`data/hud_token`), and refuses requests that
   arrive through a tunnel. Only `/twilio/*` is meant to be public.
+- Phone access: `tailscale serve` forwards your Tailscale address (reachable only by devices signed in
+  to your account) to a separate port bound to `127.0.0.1`. Only requests on that port may carry
+  forwarding headers, and they still need the token, which the pairing QR code carries.
 - Every Twilio webhook is checked against Twilio's signature; calls only connect to `OWNER_PHONE_NUMBER`.
 - Telegram answers only `TELEGRAM_OWNER_CHAT_ID`.
 - Browser speech recognition sends your audio to Google (Chrome) or Microsoft (Edge) for transcription.

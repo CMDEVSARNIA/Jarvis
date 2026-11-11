@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#040805">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="jarvis-hud" content="1">
   <title>{{DISPLAY_NAME}}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/static/hud.css">
   <link rel="icon" href="/static/icon-huxley.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/icons/huxley-180.png">
 </head>
 <body data-theme="{{THEME}}" data-name="{{NAME}}" data-display-name="{{DISPLAY_NAME}}">
   <div class="crt" aria-hidden="true"></div>
 
   <header class="top">
     <div class="brand"><span id="brand-name">{{DISPLAY_NAME}}</span><small>HOME TERMINAL</small></div>
+    <div class="mini-clock" id="mini-clock" aria-hidden="true">--:--</div>
     <div class="state" id="state-label">STANDBY</div>
     <ul class="links">
       <li><span class="dot" id="link-core"></span>CORE <em id="model-name"></em></li>
@@ -23,31 +28,37 @@
     </ul>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Screens">
+    <button type="button" role="tab" data-tab="talk">COMMS</button>
+    <button type="button" role="tab" data-tab="day">DAY</button>
+    <button type="button" role="tab" data-tab="status">STATUS</button>
+  </nav>
+
   <main class="grid">
     <div class="col">
-      <section class="module">
+      <section class="module" data-pane="status">
         <h2>&gt; CHRONO</h2>
         <div class="chrono" id="clock-time">--:--</div>
         <div class="small" id="clock-date"></div>
       </section>
-      <section class="module">
+      <section class="module" data-pane="status">
         <h2>&gt; ATMOS</h2>
         <p class="dash" id="dash-weather">--</p>
         <div class="rainbars" id="dash-rain" role="img" aria-label="Chance of rain over the next hours"></div>
         <p class="small" id="dash-rain-note"></p>
       </section>
-      <section class="module">
+      <section class="module" data-pane="status">
         <h2>&gt; SYSTEM</h2>
         <div class="meter"><span>CPU</span><div class="bar"><i id="cpu-bar"></i></div><b id="cpu-val">--</b></div>
         <div class="meter"><span>MEM</span><div class="bar"><i id="mem-bar"></i></div><b id="mem-val">--</b></div>
       </section>
-      <section class="module grow">
+      <section class="module grow" data-pane="day">
         <h2>&gt; TASKS</h2>
         <ul class="dashlist" id="dash-todo"><li class="empty">NOTHING ON THE LIST</li></ul>
       </section>
     </div>
 
-    <section class="module core">
+    <section class="module core" data-pane="talk">
       <h2 class="scope-head"><span>&gt; SCOPE · VOICE</span><span id="scope-state">● IDLE</span></h2>
       <div class="scope">
         <canvas id="reactor" aria-label="Voice activity"></canvas>
@@ -72,14 +83,14 @@
     </section>
 
     <div class="col">
-      <section class="module">
+      <section class="module" data-pane="day">
         <h2>&gt; SCHEDULE</h2>
         <h3>TODAY</h3>
         <ul class="dashlist" id="dash-today"><li class="empty">NO CALENDAR CONNECTED</li></ul>
         <h3>REMINDERS</h3>
         <ul class="dashlist" id="dash-upcoming"><li class="empty">NONE SET</li></ul>
       </section>
-      <section class="module grow">
+      <section class="module grow" data-pane="talk">
         <h2>&gt; COMMS LOG</h2>
         <div class="log" id="log"></div>
       </section>
@@ -94,7 +105,7 @@
     </form>
     <div class="switches">
       <label class="toggle" title="After answering, keep listening for a follow-up"><input type="checkbox" id="convo-on" checked>CONVO</label>
-      <label class="toggle" title="Listen continuously for the assistant's name"><input type="checkbox" id="always-listen">WAKE</label>
+      <label class="toggle desk-only" title="Listen continuously for the assistant's name"><input type="checkbox" id="always-listen">WAKE</label>
       <label class="toggle" title="Speak replies aloud"><input type="checkbox" id="voice-on" checked>VOICE</label>
       <label class="toggle" title="How long a pause means you've finished talking">WAIT
         <select id="pause-length" class="pause-select">
@@ -110,6 +121,7 @@
       <button id="memory-btn" class="pill" title="What the assistant remembers about you">[ MEMORY ]</button>
       <button id="briefing" class="pill" title="Hear today's briefing">[ BRIEFING ]</button>
       <button id="call-me" class="pill" title="Ring your phone">[ CALL ]</button>
+      <button id="pair-btn" class="pill desk-only" title="Put Huxley on your phone">[ PAIR PHONE ]</button>
       <button id="reset" class="pill ghost" title="Clear the conversation">[ RESET ]</button>
     </div>
   </footer>
@@ -125,9 +137,20 @@
     </div>
   </div>
 
+  <div class="modal" id="pair-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pair-title">
+    <div class="modal-box pair-box">
+      <div class="modal-head">
+        <h2 id="pair-title">&gt; PAIR PHONE</h2>
+        <button type="button" class="vbtn" id="pair-close">CLOSE</button>
+      </div>
+      <div id="pair-body" class="pair-body" aria-live="polite"></div>
+    </div>
+  </div>
+
   <div class="locked" id="locked" hidden>
     <p>ACCESS KEY MISSING OR INVALID.</p>
     <p>OPEN THE ASSISTANT FROM ITS TRAY ICON OR DESKTOP SHORTCUT.</p>
+    <p>ON A PHONE: SCAN THE PAIR PHONE CODE ON THE LAPTOP AGAIN.</p>
   </div>
 
   <script src="/static/hud.js"></script>

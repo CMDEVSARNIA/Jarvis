@@ -10,4 +10,5 @@ tzdata>=2024.1  # time zones on Windows
 pillow>=10.0           # screenshots
 icalendar>=5.0         # calendar
 recurring-ical-events>=2.2
+qrcode>=7.4            # phone pairing code
 pystray>=0.19; sys_platform == "win32"   # tray icon

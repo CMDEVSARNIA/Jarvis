@@ -4,10 +4,14 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 from typing import Any
 
 _subscribers: set[asyncio.Queue] = set()
 LOOP: asyncio.AbstractEventLoop | None = None  # set by the server at startup
+# Which HUD window (laptop or phone) started the work in progress. Events get tagged
+# with it, so only the screen you asked from speaks the answer out loud.
+ORIGIN: contextvars.ContextVar[str] = contextvars.ContextVar("origin", default="")
 
 
 def listeners() -> int:
@@ -32,6 +36,9 @@ def unsubscribe(q: asyncio.Queue) -> None:
 
 
 def publish(event: dict[str, Any]) -> None:
+    origin = ORIGIN.get()
+    if origin and "origin" not in event:
+        event = {**event, "origin": origin}
     for q in list(_subscribers):
         try:
             q.put_nowait(event)

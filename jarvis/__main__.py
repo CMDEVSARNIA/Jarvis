@@ -7,6 +7,7 @@ from pathlib import Path
 import logging
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import threading
@@ -85,6 +86,25 @@ def _pythonw() -> str:
     return str(candidate) if candidate.exists() else sys.executable
 
 
+def _serve(server: uvicorn.Server) -> None:
+    """Run the server on its main port, plus the phone port: 127.0.0.1 only, and
+    reached only through `tailscale serve`, so the server knows those requests come
+    from your own devices (see jarvis/tailnet.py)."""
+    sockets = [server.config.bind_socket()]  # exits if the main port is taken
+    if settings.phone_port and settings.phone_port != settings.port:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.bind(("127.0.0.1", settings.phone_port))
+            sock.set_inheritable(True)
+            sockets.append(sock)
+        except OSError as exc:
+            sock.close()
+            logging.getLogger("jarvis").warning(
+                "Port %s is in use, so phone access is off (set PHONE_PORT in .env): %s",
+                settings.phone_port, exc.strerror)
+    server.run(sockets=sockets)
+
+
 def _setup_logging(tray: bool) -> None:
     if tray:
         # No console in tray mode: everything goes to data/jarvis.log (Tray > Open log).
@@ -126,7 +146,7 @@ def run_tray(url: str, open_browser: bool) -> None:
     server = uvicorn.Server(uvicorn.Config("jarvis.server:app", host=settings.host,
                                            port=settings.port, log_level="warning",
                                            log_config=None))
-    thread = threading.Thread(target=server.run, name="server", daemon=True)
+    thread = threading.Thread(target=_serve, args=[server], name="server", daemon=True)
     thread.start()
     for _ in range(200):
         if server.started or not thread.is_alive():
@@ -207,8 +227,8 @@ def main() -> None:
     if not headless:
         threading.Timer(1.5, open_hud, args=[url]).start()
 
-    uvicorn.run("jarvis.server:app", host=settings.host, port=settings.port,
-                log_level="warning")
+    _serve(uvicorn.Server(uvicorn.Config("jarvis.server:app", host=settings.host,
+                                         port=settings.port, log_level="warning")))
 
 
 if __name__ == "__main__":

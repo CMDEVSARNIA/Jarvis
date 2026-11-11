@@ -195,3 +195,82 @@ body[data-theme="classic"] #chat-input { font-size: 15px; color: #d6f1ff; }
   .col:first-child { display: none; }
   .links { display: none; }
 }
+
+/* ------------------------------------------------------------- pair phone */
+.tabs, .mini-clock { display: none; }
+.pair-box { width: min(760px, 100%); }
+.pair-body { overflow-y: auto; font-size: 14px; line-height: 1.55; }
+.pair-body ol { margin: 6px 0 12px; padding-left: 22px; }
+.pair-body li { margin: 0 0 8px; }
+.pair-body a { color: var(--fg); }
+.pair-body .note { color: var(--dim); font-size: 12px; }
+.pair-ready { display: grid; grid-template-columns: 240px 1fr; gap: 22px; align-items: start; margin-top: 8px; }
+.qr { background: #c8ffd9; padding: 10px; border-radius: var(--radius); box-shadow: 0 0 18px rgba(77, 255, 136, 0.35); }
+.qr svg { display: block; width: 100%; height: auto; }
+.qr path { fill: #040805; }
+.pair-url { word-break: break-all; color: var(--dim); font-size: 12px; text-transform: none; }
+@media (max-width: 640px) { .pair-ready { grid-template-columns: 1fr; } .qr { max-width: 260px; } }
+
+/* ------------------------------------------------------------------ phone */
+/* Portrait phones: one screen at a time (COMMS / DAY / STATUS tabs), a big TALK
+   button within thumb reach, and room for the notch and gesture bar. */
+@media (max-width: 700px) {
+  body { height: 100dvh; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
+  body[data-theme="phosphor"] .crt { box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.8); }
+  .desk-only { display: none !important; }
+
+  .top { margin: 8px 10px 0; padding: 6px 10px; gap: 10px; }
+  .brand span { font-size: 26px; }
+  .brand small { display: none; }
+  .mini-clock { display: block; font-family: var(--display); font-size: 26px; color: var(--dim); }
+  .state { margin-left: auto; min-width: 0; font-size: 10px; letter-spacing: 0.2em; padding: 5px 8px; }
+
+  .tabs { display: flex; gap: 6px; margin: 8px 10px 0; }
+  .tabs button {
+    flex: 1; height: 38px; background: transparent; color: var(--dim); border: 1px solid var(--line);
+    border-radius: var(--radius); font-size: 12px; letter-spacing: 0.22em; text-shadow: var(--glow);
+  }
+  .tabs button[aria-selected="true"] { background: var(--fg); color: var(--hl-text); border-color: var(--fg); text-shadow: none; }
+
+  .grid { display: flex; flex-direction: column; gap: 8px; padding: 8px 10px; overflow-y: auto; }
+  .col, .col:first-child { display: contents; }
+  .grid .module { display: none; padding: 10px 12px; }
+  body[data-tab="talk"] .grid [data-pane="talk"],
+  body[data-tab="day"] .grid [data-pane="day"],
+  body[data-tab="status"] .grid [data-pane="status"] { display: flex; }
+  body[data-tab="talk"] .grid { overflow: hidden; }
+
+  .core { flex: 0 0 auto; }
+  .scope { flex: none; height: 26vh; min-height: 140px; }
+  .caption { font-size: 22px; min-height: 1.2em; max-height: 3.5em; margin-top: 8px; }
+  body[data-theme="classic"] .caption { font-size: 16px; }
+  .grid .module.grow { flex: 1 1 auto; }
+  body[data-tab="talk"] .grid .module.grow { min-height: 120px; }
+  body[data-tab="day"] .dashlist, body[data-tab="status"] .dashlist { font-size: 15px; }
+  .chrono { font-size: 72px; }
+
+  .controls {
+    margin: 0 10px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    border-bottom: 0; border-radius: var(--radius) var(--radius) 0 0;
+    display: grid; grid-template-columns: 1fr; gap: 8px;
+  }
+  .talk { order: 3; width: 100%; height: 64px; font-size: 18px; touch-action: manipulation; }
+  #chat-form { order: 1; flex: none; min-width: 0; }
+  #chat-input { height: 46px; font-size: 22px; }
+  .switches, .buttons { flex-wrap: nowrap; overflow-x: auto; gap: 8px; scrollbar-width: none; }
+  .switches::-webkit-scrollbar, .buttons::-webkit-scrollbar { display: none; }
+  .switches { order: 2; }
+  .buttons { order: 2; }
+  .pill { flex: none; height: 36px; font-size: 11px; padding: 0 10px; }
+
+  .viewer-bar { flex-wrap: wrap; }
+  .viewer-form { flex-basis: 100%; order: 5; }
+  .reader { padding: 14px 16px; font-size: 15px; }
+  .modal-box { max-height: 88dvh; padding: 14px; }
+}
+body.remote #pair-btn { display: none; }
+/* The pairing code sits above the CRT scanlines so phone cameras read it cleanly. */
+#pair-modal { z-index: 25; }
+@media (max-width: 700px) {
+  body[data-tab="day"] .grid .module.grow, body[data-tab="status"] .grid .module.grow { flex: 0 0 auto; }
+}

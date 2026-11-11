@@ -97,6 +97,14 @@ class Settings:
         return DISPLAY_NAME
 
     @property
+    def phone_port(self) -> int:
+        """Where `tailscale serve` hands phone requests to Huxley (127.0.0.1 only).
+        A separate port, so the server can tell your phone apart from a public
+        tunnel (ngrok) that forwards to the main port. PHONE_PORT=0 turns it off."""
+        value = _env("PHONE_PORT", str(self.port + 1))
+        return int(value) if value.isdigit() else 0
+
+    @property
     def telegram_enabled(self) -> bool:
         return bool(self.telegram_token)
 
