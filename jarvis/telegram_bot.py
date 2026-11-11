@@ -58,6 +58,11 @@ async def run() -> None:
         try:
             # A webhook left on the bot (e.g. by another tool) stops getUpdates working.
             await _call(client, "deleteWebhook")
+            # Telegram accepted the token: show the real status now rather than
+            # after the first 30-second poll returns.
+            _set_status(bool(settings.telegram_owner_chat_id),
+                        "connected" if settings.telegram_owner_chat_id
+                        else "message your bot to get your chat id")
         except httpx.HTTPError:
             pass  # the poll loop below reports the real problem
         while True:

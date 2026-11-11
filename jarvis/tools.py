@@ -323,6 +323,37 @@ async def call_owner(reason: str) -> str:
     return await phone.call_owner(reason)
 
 
+# The API accepts at most 20 "strict" tools (strict = inputs are guaranteed to match
+# the schema). Strict only pays off where the input has structure: several fields,
+# numbers, enums or arrays. One free-text field or no input gains nothing, and the
+# handlers already turn bad input into an error message for Claude.
+STRICT_LIMIT = 20
+
+
+def _needs_strict(tool: dict[str, Any]) -> bool:
+    props = tool.get("input_schema", {}).get("properties", {})
+    if not props:
+        return False
+    if len(props) > 1:
+        return True
+    only = next(iter(props.values()))
+    return only.get("type") != "string" or "enum" in only
+
+
+def _apply_strict_policy(tools: list[dict[str, Any]]) -> None:
+    kept = 0
+    for tool in tools:
+        if "strict" not in tool:
+            continue  # server tools
+        if _needs_strict(tool) and kept < STRICT_LIMIT:
+            kept += 1
+        else:
+            tool.pop("strict")
+
+
+_apply_strict_policy(TOOLS)
+
+
 HANDLERS: dict[str, Callable[..., Awaitable[str]]] = {
     "get_weather": weather.get_weather,
     "show_on_screen": show_on_screen,
