@@ -1,7 +1,7 @@
 """Screen and clipboard awareness. Only ever used when the owner asks.
 
-look_at_screen hides the Jarvis window for a moment, takes a screenshot of the main
-screen, brings Jarvis back, and gives Claude a downscaled JPEG (fewer tokens).
+look_at_screen hides the Huxley window for a moment, takes a screenshot of the main
+screen, brings Huxley back, and gives Claude a downscaled JPEG (fewer tokens).
 """
 
 from __future__ import annotations
@@ -45,14 +45,14 @@ async def look_at_screen() -> list[dict[str, Any]] | str:
     try:
         jpeg = await asyncio.to_thread(_grab, True)
     except ImportError:
-        return "Screen capture needs the Pillow package (restart Jarvis to install it)."
+        return "Screen capture needs the Pillow package (restart Huxley to install it)."
     except OSError as exc:
         return f"Couldn't capture the screen ({exc})."
     events.publish({"type": "activity", "label": "SCREEN", "text": "screenshot taken for Claude"})
     return [
         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
                                      "data": base64.b64encode(jpeg).decode()}},
-        {"type": "text", "text": f"The owner's screen at {local_now():%H:%M} (Jarvis hidden)."},
+        {"type": "text", "text": f"The owner's screen at {local_now():%H:%M} (Huxley hidden)."},
     ]
 
 

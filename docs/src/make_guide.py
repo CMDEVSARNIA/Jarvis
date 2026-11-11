@@ -1,4 +1,4 @@
-"""Builds docs/Jarvis-Setup-Guide.pdf"""
+"""Builds docs/Huxley-Setup-Guide.pdf"""
 import sys
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
@@ -98,22 +98,22 @@ def table(rows, widths, header=True):
 
 
 # ======================================================================= cover
-P("J.A.R.V.I.S.", title)
+P("H.U.X.L.E.Y.", title)
 P("Setup guide: Claude-powered assistant with phone chat, phone calls, and a desktop HUD", subtitle)
 
 warn([
     "<b>Revoke the API key you pasted into the chat earlier.</b> Anything pasted into a chat is stored "
     "and should be treated as public. Go to <b>platform.claude.com &gt; API Keys</b>, delete it, and create a new one.",
-    "From now on, keys only ever go into Jarvis's settings tool (Step 3). Never into chats, emails, or GitHub.",
+    "From now on, keys only ever go into Huxley's settings tool (Step 3). Never into chats, emails, or GitHub.",
 ], "Do this first")
 
 H2("How it fits together")
-P("Jarvis is a small program that runs all the time on a computer you control. It sends what you say to "
+P("Huxley is a small program that runs all the time on a computer you control. It sends what you say to "
   "Claude, runs tools (web search, texting you, calling you), and answers. You reach it three ways:")
 table([
     ["Channel", "What it is", "Needs"],
-    ["Telegram", "Text Jarvis from your phone, any time", "Free Telegram bot"],
-    ["Phone call", "Jarvis rings your cell and you talk to it", "Twilio number + a tunnel (ngrok)"],
+    ["Telegram", "Text Huxley from your phone, any time", "Free Telegram bot"],
+    ["Phone call", "Huxley rings your cell and you talk to it", "Twilio number + a tunnel (ngrok)"],
     ["Desktop HUD", "The movie-style screen with voice, at your PC", "A Windows PC with Chrome or Edge"],
 ], [1.2, 3.3, 2.4])
 
@@ -125,7 +125,7 @@ table([
     ["Hosting cost", "About $0-4 per month", "$0 (it uses your PC)"],
     ["Hardest part", "Clicking through Google's cloud console", "Nothing; double-click an installer"],
 ], [1.3, 2.8, 2.8])
-tip("Start with <b>Path A, Telegram only</b>. It's the cheapest way to have a working Jarvis today. Add phone "
+tip("Start with <b>Path A, Telegram only</b>. It's the cheapest way to have a working Huxley today. Add phone "
     "calls once you're happy, and move to Path B when you have a PC. Your settings carry over.",
     "Recommendation")
 
@@ -137,10 +137,10 @@ table([
      "A short back-and-forth on Sonnet is typically well under a cent. Prepaid credit; you set a monthly limit."],
     ["Telegram", "Free", ""],
     ["Cloud server", "$0-4 / month", "Google Cloud's e2-micro VM is free, but Google bills its public IP "
-     "(about $0.005/hour, roughly $3.65/month). Oracle's Always Free tier is $0, but it stops servers that sit idle for a week, which Jarvis usually does."],
+     "(about $0.005/hour, roughly $3.65/month). Oracle's Always Free tier is $0, but it stops servers that sit idle for a week, which Huxley usually does."],
     ["Twilio (calls)", "$1.15 / month + per minute", "Local US number $1.15/month; outbound US calls about "
      "$0.013-0.014/minute, plus speech-recognition fees. New accounts get trial credit."],
-    ["ngrok (tunnel)", "Free", "Free plan includes one fixed web address, which is all Jarvis needs."],
+    ["ngrok (tunnel)", "Free", "Free plan includes one fixed web address, which is all Huxley needs."],
 ], [1.3, 1.4, 4.2])
 P("<b>Realistic budget for light personal use: about $5-10 per month</b> on Sonnet with occasional calls. "
   "This is an estimate. Your spend limit in Step 1 guarantees it can't run away.", small)
@@ -148,7 +148,7 @@ keep_from(_k)
 
 # =================================================================== accounts
 H1("Step 1: Claude API key")
-P("This is how Jarvis pays for Claude. It is separate from any claude.ai subscription.")
+P("This is how Huxley pays for Claude. It is separate from any claude.ai subscription.")
 steps([
     "Open <b>platform.claude.com</b> and sign in (or sign up).",
     "Go to <b>Billing</b> and add a small amount of prepaid credit (for example $5-10).",
@@ -169,15 +169,15 @@ H1("Step 2: Telegram bot (5 minutes, on your phone)")
 steps([
     "Install <b>Telegram</b> and create an account.",
     "Search for <b>@BotFather</b> (it has a blue check mark) and open the chat.",
-    "Send <font name='Courier'>/newbot</font>. Give it a name (e.g. <i>Jarvis</i>) and a username that ends in "
+    "Send <font name='Courier'>/newbot</font>. Give it a name (e.g. <i>Huxley</i>) and a username that ends in "
     "<i>bot</i> (e.g. <i>tony_jarvis_bot</i>).",
     "BotFather replies with a <b>token</b> like <font name='Courier'>123456789:AAF...</font>. Copy it and keep it with your API key.",
 ])
-P("You'll get your <b>chat id</b> later: the first time you message your bot, Jarvis replies with it.", small)
+P("You'll get your <b>chat id</b> later: the first time you message your bot, Huxley replies with it.", small)
 keep_from(_k)
 
 # ======================================================================= path A
-H1("Path A: Run Jarvis on a cloud server")
+H1("Path A: Run Huxley on a cloud server")
 P("These steps use Google Cloud from a web browser. A <b>Windows laptop</b> is ideal: you install nothing "
   "on it, because Google's <b>SSH</b> button opens a terminal in a browser window. (From a phone, turn on "
   "<b>Desktop site</b> in the browser menu.) Google's screens change from time to time, so button names "
@@ -201,7 +201,7 @@ steps([
     "Leave everything else as is and press <b>Create</b>. Wait for the green check mark.",
 ])
 
-H2("A3. Install Jarvis")
+H2("A3. Install Huxley")
 P("Press the <b>SSH</b> button next to your VM and click <b>Authorize</b>. A terminal window opens. Paste "
   "these lines one at a time (Ctrl+V, or right-click &gt; Paste), pressing Enter after each:")
 code("""
@@ -217,8 +217,8 @@ tip("If the repository is private, GitHub asks for a username and password. Use 
 H2("A4. Enter your settings")
 code(".venv/bin/python -m jarvis.configure")
 P("It asks one question at a time: paste your Claude key, pick model <b>1</b> (Sonnet), enter what "
-  "Jarvis should call you, and paste your Telegram token. Leave the chat id blank for now, and answer "
-  "<b>N</b> to phone calls. Your keys are hidden while you type and stored readable only by you. Then start Jarvis:")
+  "Huxley should call you, and paste your Telegram token. Leave the chat id blank for now, and answer "
+  "<b>N</b> to phone calls. Your keys are hidden while you type and stored readable only by you. Then start Huxley:")
 code("sudo systemctl restart jarvis")
 
 H2("A5. Connect Telegram")
@@ -227,44 +227,44 @@ steps([
     "Back in the SSH window run <font name='Courier'>.venv/bin/python -m jarvis.configure</font> again. "
     "Press Enter to keep each existing value and paste the chat id when asked.",
     "Run <font name='Courier'>sudo systemctl restart jarvis</font>.",
-    "Message the bot: <i>Jarvis, what's the server's CPU load?</i> You should get a reply in a few seconds.",
+    "Message the bot: <i>Huxley, what's the server's CPU load?</i> You should get a reply in a few seconds.",
 ])
-P("Jarvis now starts automatically whenever the server boots. You can close the SSH window. "
+P("Huxley now starts automatically whenever the server boots. You can close the SSH window. "
   "Useful commands: <font name='Courier'>systemctl status jarvis</font> (is it running?), "
   "<font name='Courier'>journalctl -u jarvis -n 50</font> (last 50 log lines).", small)
 
 H2("Free alternative: Oracle Cloud")
 P("Oracle's <b>Always Free</b> tier includes a VM <i>and</i> its public IP at $0, but free accounts have "
-  "servers <b>stopped if they stay idle for 7 days</b>. Jarvis is idle most of the time, so you'd need to "
+  "servers <b>stopped if they stay idle for 7 days</b>. Huxley is idle most of the time, so you'd need to "
   "upgrade to Pay As You Go (free resources stay free, but you can be billed for anything beyond them). "
   "If you try it: create an Ubuntu instance (shape VM.Standard.E2.1.Micro), connect with its <b>Cloud Shell</b>, "
   "then follow A3-A5 exactly as written.")
 
 # ======================================================================= path B
 story.append(PageBreak())
-H1("Path B: Run Jarvis on a Windows PC")
+H1("Path B: Run Huxley on a Windows PC")
 steps([
     "Install <b>Python 3.12 or newer</b> from python.org. On the first installer screen, tick "
     "<b>Add python.exe to PATH</b>.",
     "Get the code: on the GitHub page for the repository, press <b>Code &gt; Download ZIP</b> and unzip it "
-    "to e.g. <font name='Courier'>Documents\\Jarvis</font>.",
-    "Double-click <b>start-jarvis.bat</b>. The first run installs everything (a few minutes) and then asks "
+    "to e.g. <font name='Courier'>Documents\\Huxley</font>.",
+    "Double-click <b>start-huxley.bat</b>. The first run installs everything (a few minutes) and then asks "
     "your settings, the same questions as Path A.",
-    "Jarvis opens the HUD in your browser. Use <b>Microsoft Edge</b> for the best voice, and allow the microphone.",
-    "Hold <b>Space</b> (or click <b>MIC</b>) and talk. Tick <b>WAKE WORD</b> to just say <i>\"Jarvis, ...\"</i> hands-free.",
+    "Huxley opens the HUD in your browser. Use <b>Microsoft Edge</b> for the best voice, and allow the microphone.",
+    "Hold <b>Space</b> (or click <b>MIC</b>) and talk. Tick <b>WAKE WORD</b> to just say <i>\"Huxley, ...\"</i> hands-free.",
     "Connect Telegram as in A5. To change settings later, open a terminal in the folder and run "
     "<font name='Courier'>.venv\\Scripts\\python -m jarvis.configure</font>.",
-    "Optional: edit <font name='Courier'>config\\apps.json</font> to list apps Jarvis may open for you.",
+    "Optional: edit <font name='Courier'>config\\apps.json</font> to list apps Huxley may open for you.",
 ])
-warn("Only one Jarvis can use a Telegram bot at a time. If you move from the cloud server to your PC, stop the "
+warn("Only one Huxley can use a Telegram bot at a time. If you move from the cloud server to your PC, stop the "
      "server's copy first (<font name='Courier'>sudo systemctl disable --now jarvis</font>) or create a second bot.",
      "Running both?")
-P("Jarvis only runs while the window is open and the PC is awake. To start it automatically, add "
-  "<b>start-jarvis.bat</b> to Windows Task Scheduler with the trigger <i>At log on</i>.", small)
+P("Huxley only runs while the window is open and the PC is awake. To start it automatically, add "
+  "<b>start-huxley.bat</b> to Windows Task Scheduler with the trigger <i>At log on</i>.", small)
 
 # ======================================================================= calls
 H1("Add-on: Phone calls")
-P("Jarvis can ring your cell and hold a spoken conversation. Do this after Telegram works.")
+P("Huxley can ring your cell and hold a spoken conversation. Do this after Telegram works.")
 H2("C1. Twilio number")
 steps([
     "Sign up at <b>twilio.com</b>. During signup, verify your own cell number.",
@@ -274,7 +274,7 @@ steps([
 P("On a trial account, Twilio can only call your verified number and plays a short trial message first. "
   "Upgrading removes that.", small)
 
-H2("C2. Tunnel (so Twilio can reach Jarvis)")
+H2("C2. Tunnel (so Twilio can reach Huxley)")
 steps([
     "Sign up free at <b>ngrok.com</b>. In the dashboard, copy your <b>authtoken</b>, then under <b>Domains</b> "
     "claim your free static domain (looks like <font name='Courier'>something.ngrok-free.app</font>).",
@@ -285,15 +285,15 @@ code("bash deploy/setup-ngrok.sh")
 P("<b>Windows PC:</b> download ngrok for Windows, then in a second window run the command shown in your ngrok "
   "dashboard. It looks like <font name='Courier'>ngrok http --url=YOUR-DOMAIN 8000</font>. Keep that window open.", small)
 
-H2("C3. Tell Jarvis and test")
+H2("C3. Tell Huxley and test")
 steps([
     "Run the settings tool again and answer <b>y</b> to phone calls. Enter the SID, token, your Twilio number and "
     "your cell (both with + and country code, e.g. <font name='Courier'>+15551234567</font>), and the public URL "
     "<font name='Courier'>https://YOUR-DOMAIN</font>.",
-    "Restart Jarvis.",
+    "Restart Huxley.",
     "Text your bot: <i>call me</i>. Your phone rings. Talk normally. Say <i>goodbye</i> to hang up.",
 ])
-P("Calling <i>into</i> Jarvis is off by default, because caller ID can be faked. Jarvis only ever calls your number.", small)
+P("Calling <i>into</i> Huxley is off by default, because caller ID can be faked. Huxley only ever calls your number.", small)
 
 # ================================================================== trouble
 story.append(PageBreak())
@@ -301,26 +301,26 @@ H1("Troubleshooting")
 table([
     ["Symptom", "Fix"],
     ["Bot never replies", "Check <font name='Courier'>systemctl status jarvis</font> and the logs. Make sure the "
-     "token is right and only one copy of Jarvis is running (logs show <i>409 Conflict</i> otherwise)."],
+     "token is right and only one copy of Huxley is running (logs show <i>409 Conflict</i> otherwise)."],
     ["Bot replies with your chat id every time", "TELEGRAM_OWNER_CHAT_ID isn't set yet. Run the settings tool and restart."],
     ["<i>My API key was rejected</i>", "The Claude key is wrong or revoked. Make a new one and run the settings tool."],
     ["<i>I'm being rate limited</i>, or errors about credit", "Add credit or raise the limit at platform.claude.com."],
     ["<i>Phone calls are not configured</i>", "One of the Twilio settings or PUBLIC_BASE_URL is blank."],
     ["Call connects, then <i>an application error has occurred</i>",
-     "Twilio can't reach Jarvis. Check the tunnel is running and PUBLIC_BASE_URL exactly matches the ngrok domain "
+     "Twilio can't reach Huxley. Check the tunnel is running and PUBLIC_BASE_URL exactly matches the ngrok domain "
      "(https, no trailing slash)."],
     ["Phone doesn't ring on a trial account", "Your cell must be a verified number in Twilio."],
-    ["HUD says <i>Access token missing</i>", "Open the exact HUD link printed in the Jarvis window (it includes a token)."],
+    ["HUD says <i>Access token missing</i>", "Open the exact HUD link printed in the Huxley window (it includes a token)."],
     ["Microphone does nothing", "Use Chrome or Edge, and allow microphone access when the browser asks."],
 ], [2.2, 4.7])
 
 H1("Safety checklist")
 bullets([
     "The key you pasted in chat is revoked, and a spend limit is set on platform.claude.com.",
-    "Keys exist only in Jarvis's settings (.env file), which is never uploaded to GitHub.",
-    "TELEGRAM_OWNER_CHAT_ID is set, so Jarvis ignores everyone else.",
+    "Keys exist only in Huxley's settings (.env file), which is never uploaded to GitHub.",
+    "TELEGRAM_OWNER_CHAT_ID is set, so Huxley ignores everyone else.",
     "Inbound calls stay off unless you understand the caller-ID risk.",
-    "Jarvis can't run arbitrary commands. Each tool is deliberately narrow, so a stolen phone can't take over your PC.",
+    "Huxley can't run arbitrary commands. Each tool is deliberately narrow, so a stolen phone can't take over your PC.",
     "Calling other people or businesses for you is not built in yet. When it is, it should say it's an AI "
     "and only call numbers you approve. AI-voice calls are regulated in the US.",
 ])
@@ -329,7 +329,7 @@ _k = len(story)
 H2("Everyday commands (cloud server)")
 table([
     ["What", "Command"],
-    ["Is Jarvis running?", "<font name='Courier'>systemctl status jarvis</font>"],
+    ["Is Huxley running?", "<font name='Courier'>systemctl status jarvis</font>"],
     ["Recent logs", "<font name='Courier'>journalctl -u jarvis -n 50</font>"],
     ["Change settings", "<font name='Courier'>cd ~/jarvis &amp;&amp; .venv/bin/python -m jarvis.configure</font>"],
     ["Restart", "<font name='Courier'>sudo systemctl restart jarvis</font>"],
@@ -343,13 +343,13 @@ def on_page(canvas, doc):
     canvas.saveState()
     canvas.setFont("Helvetica", 8.5)
     canvas.setFillColor(MUTED)
-    canvas.drawString(0.8 * inch, 0.5 * inch, "J.A.R.V.I.S. setup guide")
+    canvas.drawString(0.8 * inch, 0.5 * inch, "H.U.X.L.E.Y. setup guide")
     canvas.drawRightString(7.7 * inch, 0.5 * inch, f"Page {doc.page}")
     canvas.restoreState()
 
 
 doc = SimpleDocTemplate(OUT, pagesize=letter, leftMargin=0.8 * inch, rightMargin=0.8 * inch,
                         topMargin=0.75 * inch, bottomMargin=0.8 * inch,
-                        title="J.A.R.V.I.S. Setup Guide", author="Jarvis project")
+                        title="H.U.X.L.E.Y. Setup Guide", author="Huxley project")
 doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
 print("wrote", OUT)

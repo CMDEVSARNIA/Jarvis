@@ -33,7 +33,7 @@ def _press(vk: int, times: int = 1) -> None:
 
 def _unsupported() -> str | None:
     if sys.platform != "win32":
-        return "Media control only works when Jarvis runs on a Windows PC."
+        return "Media control only works when Huxley runs on a Windows PC."
     return None
 
 

@@ -1,4 +1,4 @@
-"""Self-update from GitHub, run by start-jarvis.bat before Jarvis starts.
+"""Self-update from GitHub, run by start-huxley.bat before Huxley starts.
 
 Downloads the latest code only when it has changed, and replaces program files
 while never touching your settings or data:
@@ -30,7 +30,7 @@ PROTECTED_TOP = {".env", "data", ".venv", ".git", "ngrok.exe", "ngrok"}
 KEEP_IF_PRESENT = {"config/apps.json"}          # yours once you've edited it
 # Windows reads a running .bat file as it goes, so the launcher is never
 # rewritten in place: it's staged and swapped in on the next start.
-STAGED = {"start-jarvis.bat": "start-jarvis.new.bat"}
+STAGED = {"start-jarvis.bat": "start-jarvis.new.bat", "start-huxley.bat": "start-huxley.new.bat"}
 
 
 def _get(url: str, accept: str = "application/vnd.github+json") -> bytes:
@@ -111,14 +111,14 @@ def update() -> str:
         branch = os.environ.get("UPDATE_BRANCH") or json.loads(_get(API))["default_branch"]
         sha = json.loads(_get(f"{API}/commits/{branch}"))["sha"]
         if _state().get("sha") == sha:
-            return "Jarvis is up to date."
+            return "Huxley is up to date."
         changed = apply_zip(_get(f"{API}/zipball/{sha}", accept="*/*"))
         _save_state(sha=sha)
         if not changed:
-            return "Jarvis is up to date."
+            return "Huxley is up to date."
         note = " The launcher itself changed; that applies on the next start." \
             if any(c in STAGED for c in changed) else ""
-        return f"Updated Jarvis ({len(changed)} files).{note}"
+        return f"Updated Huxley ({len(changed)} files).{note}"
     except urllib.error.HTTPError as exc:
         if exc.code in (401, 403, 404):
             return (f"Couldn't check for updates (GitHub said {exc.code}). If the repository is "

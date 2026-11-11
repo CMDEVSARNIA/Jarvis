@@ -1,11 +1,11 @@
 ---
 name: jarvis-cloud-setup
-description: Set up Jarvis on a Google Cloud e2-micro server from the owner's Windows laptop (Session 1 of docs/Jarvis-Session-1.pdf). Use when the user asks to set up, install, deploy, or check the Jarvis cloud server.
+description: Set up Huxley on a Google Cloud e2-micro server from the owner's Windows laptop (Session 1 of docs/Huxley-Session-1.pdf). Use when the user asks to set up, install, deploy, or check the Huxley cloud server.
 ---
 
-# Jarvis cloud setup (Session 1)
+# Huxley cloud setup (Session 1)
 
-You are setting up Jarvis on a low-cost Google Cloud server for the owner, from their
+You are setting up Huxley on a low-cost Google Cloud server for the owner, from their
 laptop. Follow these phases in order. Before each phase, say in one line what you are
 about to do. After each phase, confirm the checkpoint before moving on. If anything
 fails, stop, show the error, and explain it plainly. Don't improvise around billing
@@ -36,7 +36,7 @@ Confirm in one short message:
 2. They have a Google Cloud account with billing set up (signed up at
    console.cloud.google.com and added a card).
 
-If not, point them to Part 1 / Part 2 step A of `docs/Jarvis-Session-1.pdf` and wait.
+If not, point them to Part 1 / Part 2 step A of `docs/Huxley-Session-1.pdf` and wait.
 
 ## Phase 1: gcloud CLI
 
@@ -51,14 +51,14 @@ If not, point them to Part 1 / Part 2 step A of `docs/Jarvis-Session-1.pdf` and 
 ## Phase 2: Project, billing, budget
 
 1. `gcloud projects list`. If there's a suitable project, ask which one to use.
-   Otherwise create one: `gcloud projects create jarvis-<6 random lowercase letters/digits> --name="Jarvis"`.
+   Otherwise create one: `gcloud projects create jarvis-<6 random lowercase letters/digits> --name="Huxley"`.
 2. `gcloud config set project <PROJECT_ID>`
 3. Billing: `gcloud billing accounts list`. If there's exactly one open account, link it:
    `gcloud billing projects link <PROJECT_ID> --billing-account=<ACCOUNT_ID>`.
    If there are none, the owner must add billing in the console first. Stop.
 4. `gcloud services enable compute.googleapis.com billingbudgets.googleapis.com` (takes a minute or two)
 5. Budget alert ($5, emails at 50/90/100%):
-   `gcloud billing budgets create --billing-account=<ACCOUNT_ID> --display-name="Jarvis" --budget-amount=5USD --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0`
+   `gcloud billing budgets create --billing-account=<ACCOUNT_ID> --display-name="Huxley" --budget-amount=5USD --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0`
    If this command fails, don't retry variations. Ask the owner to create the budget
    in the console (Billing > Budgets & alerts) and continue.
 
@@ -81,7 +81,7 @@ Checkpoint: the project is set, billing is linked, and the budget exists.
 
 Checkpoint: `e2-micro`, `pd-standard`, `RUNNING`.
 
-## Phase 4: Install Jarvis on the server
+## Phase 4: Install Huxley on the server
 
 1. The first SSH connection generates keys. Run:
    `gcloud compute ssh jarvis --zone=us-central1-a --quiet --command="echo connected"`
@@ -121,7 +121,7 @@ chat id blank, **N** to phone calls. Wait for them to say done.
 
 ## Phase 6: Verify and connect Telegram
 
-1. Check the service (the logs are safe: Jarvis keeps tokens out of them):
+1. Check the service (the logs are safe: Huxley keeps tokens out of them):
    `gcloud compute ssh jarvis --zone=us-central1-a --quiet --command="systemctl is-active jarvis; journalctl -u jarvis -n 25 --no-pager"`
    Expect `active` and a "Telegram bot polling" line. If you see "API key was
    rejected" or a crash, explain it and send the owner back to Phase 5.
@@ -132,7 +132,7 @@ chat id blank, **N** to phone calls. Wait for them to say done.
    `gcloud compute ssh jarvis --zone=us-central1-a --quiet --command="cd ~/jarvis && .venv/bin/python -c \"from dotenv import set_key; set_key('.env','TELEGRAM_OWNER_CHAT_ID','<ID>',quote_mode='never')\" && sudo systemctl restart jarvis && sleep 3 && systemctl is-active jarvis"`
 4. Ask the owner to text the bot: "What's the server's CPU load?"
 
-Checkpoint: Jarvis replies on Telegram. Session 1 is done.
+Checkpoint: Huxley replies on Telegram. Session 1 is done.
 
 ## Finish
 
@@ -141,6 +141,6 @@ alert. Say what it costs (about $3.65/month for the public IP address plus Claud
 usage) and how to pause it to stop most costs:
 `gcloud compute instances stop jarvis --zone=us-central1-a` (start it again with `start`).
 A stopped server still pays for its disk and IP, so suggest `delete` only if they're
-done with Jarvis, and only after confirming with them.
-Next steps: phone calls (Session 2, `docs/Jarvis-Setup-Guide.pdf` Add-on), the phone
+done with Huxley, and only after confirming with them.
+Next steps: phone calls (Session 2, `docs/Huxley-Setup-Guide.pdf` Add-on), the phone
 web app, email alerts.

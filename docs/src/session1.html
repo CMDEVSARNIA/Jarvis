@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Jarvis Session 1: Telegram on the cloud</title>
+<title>Huxley Session 1: Telegram on the cloud</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap">
 <style>
   @page { size: letter; margin: 0; }
@@ -97,7 +97,7 @@
 
 <!-- ================================================================ COVER -->
 <section class="page cover">
-  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">SETUP · SESSION 1 OF 2</span></div>
+  <div class="topbar"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">SETUP · SESSION 1 OF 2</span></div>
 
   <div class="reactor">
     <svg width="210" height="210" viewBox="0 0 270 270" aria-hidden="true">
@@ -112,8 +112,8 @@
     </svg>
   </div>
 
-  <h1>J.A.R.V.I.S.</h1>
-  <p class="sub">Session 1 · Get Jarvis running on a cloud server and talking to you on Telegram</p>
+  <h1>H.U.X.L.E.Y.</h1>
+  <p class="sub">Session 1 · Get Huxley running on a cloud server and talking to you on Telegram</p>
   <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 20px">
     <span class="chip">≈ 45–60 MIN</span><span class="chip">WINDOWS LAPTOP</span><span class="chip amber">≈ $4 / MONTH</span>
   </div>
@@ -121,7 +121,7 @@
   <div class="timeline">
     <div class="card"><div class="n">01</div><div class="k">Keys</div><div class="d">New Claude key, spend limit, Telegram bot</div><div class="m">10 MIN</div></div>
     <div class="card"><div class="n">02</div><div class="k">Server</div><div class="d">A small always-on Google Cloud machine</div><div class="m">15 MIN</div></div>
-    <div class="card"><div class="n">03</div><div class="k">Install</div><div class="d">Download Jarvis and enter your settings</div><div class="m">10 MIN</div></div>
+    <div class="card"><div class="n">03</div><div class="k">Install</div><div class="d">Download Huxley and enter your settings</div><div class="m">10 MIN</div></div>
     <div class="card"><div class="n">04</div><div class="k">Connect</div><div class="d">Link Telegram and send the first message</div><div class="m">5 MIN</div></div>
   </div>
 
@@ -139,30 +139,30 @@
     </ul></div>
   </div>
 
-  <div class="callout"><span class="t">GOLDEN RULE</span>Keys and tokens only ever go into Jarvis's settings tool. Never into a chat (including with Claude), an email, or GitHub. Anything pasted into a chat should be treated as public.</div>
+  <div class="callout"><span class="t">GOLDEN RULE</span>Keys and tokens only ever go into Huxley's settings tool. Never into a chat (including with Claude), an email, or GitHub. Anything pasted into a chat should be treated as public.</div>
 
   <div class="foot"><span>SESSION 1 · OVERVIEW</span><span>01</span></div>
 </section>
 
 <!-- ================================================================ PART 1 -->
 <section class="page">
-  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">PART 01 · KEYS</span></div>
+  <div class="topbar"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">PART 01 · KEYS</span></div>
   <span class="chip">PART 01</span>
   <h1 style="margin-top:10px">Keys</h1>
-  <p class="lead">Three things Jarvis needs to work: a fresh Claude API key, a spending cap, and a Telegram bot. All done in your browser and on your phone.</p>
+  <p class="lead">Three things Huxley needs to work: a fresh Claude API key, a spending cap, and a Telegram bot. All done in your browser and on your phone.</p>
 
   <h2>A · Claude API key</h2>
   <ol class="steps">
     <li><span class="box"></span><span class="num">1</span><span>Open <b>platform.claude.com</b> and sign in.</span></li>
     <li><span class="box"></span><span class="num">2</span><span>Go to <b>API Keys</b>. <b>Delete the key you pasted into the chat earlier.</b><span class="sub">It's in a chat transcript now, so it has to be treated as compromised.</span></span></li>
     <li><span class="box"></span><span class="num">3</span><span>Click <b>Create Key</b>, name it <code>jarvis</code>, and copy it into Notepad.<span class="sub">It starts with <code>sk-ant-api</code>. You can only see it once.</span></span></li>
-    <li><span class="box"></span><span class="num">4</span><span>Open <b>Limits</b> and set a <b>monthly spend limit</b>, e.g. $10.<span class="sub">Jarvis runs unattended; this is your safety net.</span></span></li>
+    <li><span class="box"></span><span class="num">4</span><span>Open <b>Limits</b> and set a <b>monthly spend limit</b>, e.g. $10.<span class="sub">Huxley runs unattended; this is your safety net.</span></span></li>
   </ol>
 
   <h2>B · Telegram bot (on your phone)</h2>
   <ol class="steps">
     <li><span class="box"></span><span class="num">5</span><span>In Telegram, search <b>@BotFather</b> (blue check mark) and open the chat.</span></li>
-    <li><span class="box"></span><span class="num">6</span><span>Send <code>/newbot</code>. Name it <b>Jarvis</b>, then pick a username ending in <b>bot</b>.<span class="sub">e.g. <code>yourname_jarvis_bot</code>. It has to be unique on Telegram.</span></span></li>
+    <li><span class="box"></span><span class="num">6</span><span>Send <code>/newbot</code>. Name it <b>Huxley</b>, then pick a username ending in <b>bot</b>.<span class="sub">e.g. <code>yourname_jarvis_bot</code>. It has to be unique on Telegram.</span></span></li>
     <li><span class="box"></span><span class="num">7</span><span>BotFather replies with a <b>token</b> like <code>123456789:AAF…</code>. Copy it into Notepad.<span class="sub">Telegram Desktop on the laptop makes copying easier, but the phone works too.</span></span></li>
   </ol>
 
@@ -181,10 +181,10 @@
 
 <!-- ================================================================ PART 2 -->
 <section class="page">
-  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">PART 02 · SERVER</span></div>
+  <div class="topbar"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">PART 02 · SERVER</span></div>
   <span class="chip">PART 02</span>
   <h1 style="margin-top:10px">Server</h1>
-  <p class="lead">A small Google Cloud machine that stays on 24/7 so Jarvis is always reachable. The machine itself is free tier; Google charges about $3.65/month for its public address. Google's screens change now and then, so labels may differ slightly.</p>
+  <p class="lead">A small Google Cloud machine that stays on 24/7 so Huxley is always reachable. The machine itself is free tier; Google charges about $3.65/month for its public address. Google's screens change now and then, so labels may differ slightly.</p>
 
   <h2>A · Account and budget alert</h2>
   <ol class="steps">
@@ -212,7 +212,7 @@
 
 <!-- ================================================================ PART 3 + 4 -->
 <section class="page compact">
-  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">PART 03–04 · INSTALL &amp; CONNECT</span></div>
+  <div class="topbar"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">PART 03–04 · INSTALL &amp; CONNECT</span></div>
   <span class="chip">PART 03</span>
   <h1 style="margin-top:10px">Install</h1>
   <p class="lead">Click <b>SSH</b> next to your VM, then <b>Authorize</b>. In the terminal, paste each line (<b>Ctrl+V</b> or right-click → Paste), press <b>Enter</b>, and let it finish.</p>
@@ -227,7 +227,7 @@
     <tr><th>THE SETTINGS TOOL ASKS</th><th>YOU ANSWER</th></tr>
     <tr><td>Anthropic API key</td><td>Paste from Notepad. <b>Nothing appears</b> while you paste; that's normal.</td></tr>
     <tr><td>Which model?</td><td><code>1</code> for Sonnet 5.5, the lower-cost choice.</td></tr>
-    <tr><td>What should Jarvis call you</td><td>Your name, or "sir".</td></tr>
+    <tr><td>What should Huxley call you</td><td>Your name, or "sir".</td></tr>
     <tr><td>Bot token</td><td>Paste the Telegram token (also hidden).</td></tr>
     <tr><td>Your chat id</td><td>Leave blank for now. Press Enter.</td></tr>
     <tr><td>Set up phone calls now?</td><td><code>N</code>. That's Session 2.</td></tr>
@@ -244,14 +244,14 @@
 
   <div class="check">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fd1ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
-    <div><span class="t">SESSION 1 COMPLETE</span><p>Text the bot <i>"What's the server's CPU load?"</i> and get a reply. Jarvis now runs 24/7; you can close the laptop.</p></div>
+    <div><span class="t">SESSION 1 COMPLETE</span><p>Text the bot <i>"What's the server's CPU load?"</i> and get a reply. Huxley now runs 24/7; you can close the laptop.</p></div>
   </div>
   <div class="foot"><span>SESSION 1 · INSTALL &amp; CONNECT</span><span>04</span></div>
 </section>
 
 <!-- ================================================================ TROUBLESHOOTING -->
 <section class="page">
-  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">IF SOMETHING GOES WRONG</span></div>
+  <div class="topbar"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">IF SOMETHING GOES WRONG</span></div>
   <span class="chip amber">DIAGNOSTICS</span>
   <h1 style="margin-top:10px">Troubleshooting</h1>
   <p class="lead">Most problems show up in the logs. In the SSH window, <code>journalctl -u jarvis -n 50</code> prints the last 50 lines.</p>
@@ -262,7 +262,7 @@
     <tr><td>Bot keeps replying with your chat id</td><td>The chat id isn't saved yet. Repeat Part 04, steps 2–3.</td></tr>
     <tr><td>"My API key was rejected"</td><td>The Claude key is wrong or deleted. Create a new one and re-run the settings tool.</td></tr>
     <tr><td>"I'm being rate limited"</td><td>Check your credit and spend limit at platform.claude.com.</td></tr>
-    <tr><td>Logs say <b>409 Conflict</b></td><td>Another copy of Jarvis is using the same bot. Only one may run per bot token.</td></tr>
+    <tr><td>Logs say <b>409 Conflict</b></td><td>Another copy of Huxley is using the same bot. Only one may run per bot token.</td></tr>
     <tr><td>setup-server.sh stops with an error</td><td>Screenshot the last 20 lines (keys cropped out) and send it to Claude.</td></tr>
     <tr><td>Google bill higher than expected</td><td>Check the disk type is Standard and the region is one of the three free-tier regions.</td></tr>
   </table>
@@ -284,7 +284,7 @@
     <div class="card"><h3>Up next · Session 2</h3><ul>
       <li>Phone calls: Twilio number + ngrok tunnel</li>
       <li>Then: the phone web app, email alerts</li>
-      <li>Use Jarvis for a day first</li>
+      <li>Use Huxley for a day first</li>
     </ul></div>
   </div>
   <div class="foot"><span>SESSION 1 · TROUBLESHOOTING</span><span>05</span></div>

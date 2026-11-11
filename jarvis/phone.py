@@ -69,7 +69,7 @@ def _is_owner(form: dict[str, str]) -> bool:
     if form.get("Direction") == "inbound":
         # Caller ID is spoofable; only trust inbound calls if explicitly enabled.
         return settings.allow_inbound_calls and form.get("From") == settings.owner_phone
-    return form.get("To") == settings.owner_phone  # a call Jarvis placed
+    return form.get("To") == settings.owner_phone  # a call Huxley placed
 
 
 def _twiml(vr: VoiceResponse) -> Response:

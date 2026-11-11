@@ -36,11 +36,17 @@ def _load_or_create_token() -> str:
 
 
 def _load_apps() -> dict[str, str]:
-    """Apps Jarvis may launch: name -> command/path. Edit config/apps.json."""
+    """Apps Huxley may launch: name -> command/path. Edit config/apps.json."""
     path = ROOT / "config" / "apps.json"
     if not path.exists():
         return {}
     return {k.lower(): v for k, v in json.loads(path.read_text()).items()}
+
+
+# The assistant's name is fixed: H.U.X.L.E.Y. ("Highly Useful eXecutive Logic Engine, Yours").
+# (The code folder and the GitHub repository keep the old internal name "jarvis".)
+ASSISTANT_NAME = "Huxley"
+DISPLAY_NAME = "H.U.X.L.E.Y."
 
 
 @dataclass(frozen=True)
@@ -48,7 +54,6 @@ class Settings:
     model: str = _env("JARVIS_MODEL", "claude-opus-5-5")
     effort: str = _env("JARVIS_EFFORT", "low")
     owner_name: str = _env("OWNER_NAME", "sir")
-    assistant_name: str = _env("ASSISTANT_NAME", "Jarvis")   # what you call it (and the wake word)
     hud_theme: str = _env("HUD_THEME", "phosphor").lower()    # phosphor | classic
     home_location: str = _env("HOME_LOCATION")          # e.g. "Toronto, Canada"
     units: str = _env("UNITS", "metric").lower()        # metric | imperial
@@ -72,22 +77,24 @@ class Settings:
     twilio_token: str = _env("TWILIO_AUTH_TOKEN")
     twilio_from: str = _env("TWILIO_FROM_NUMBER")
     owner_phone: str = _env("OWNER_PHONE_NUMBER")
-    # Your free static ngrok domain; Jarvis starts the tunnel itself on a PC.
+    # Your free static ngrok domain; Huxley starts the tunnel itself on a PC.
     ngrok_domain: str = field(default_factory=lambda: _clean_domain(_env("NGROK_DOMAIN")))
     public_base_url: str = field(default_factory=lambda: (
         _env("PUBLIC_BASE_URL").rstrip("/")
         or (f"https://{_clean_domain(_env('NGROK_DOMAIN'))}" if _env("NGROK_DOMAIN") else "")))
     twilio_voice: str = _env("TWILIO_VOICE", "Polly.Brian")
-    # Caller ID can be spoofed, so calls INTO Jarvis are off unless you opt in.
+    # Caller ID can be spoofed, so calls INTO Huxley are off unless you opt in.
     allow_inbound_calls: bool = _env("ALLOW_INBOUND_CALLS", "false").lower() == "true"
 
     apps: dict[str, str] = field(default_factory=_load_apps)
 
     @property
+    def assistant_name(self) -> str:
+        return ASSISTANT_NAME
+
+    @property
     def display_name(self) -> str:
-        """How the name is shown: Jarvis keeps its dotted acronym, others go upper case."""
-        name = self.assistant_name.strip() or "Jarvis"
-        return "J.A.R.V.I.S." if name.lower() == "jarvis" else name.upper()
+        return DISPLAY_NAME
 
     @property
     def telegram_enabled(self) -> bool:

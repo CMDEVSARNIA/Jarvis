@@ -1,5 +1,5 @@
 """Long-term facts about the owner (data/memory.json), viewable and editable from
-the HUD's MEMORY panel or by asking Jarvis."""
+the HUD's MEMORY panel or by asking Huxley."""
 
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 no account linking. Works with Google Calendar, Outlook and Apple iCloud.
 
 Adding an event opens a pre-filled event in your calendar for you to Save, so
-Jarvis can never change your calendar without you.
+Huxley can never change your calendar without you.
 """
 
 from __future__ import annotations
@@ -105,7 +105,7 @@ async def get_calendar(start_date: str, days: int) -> str:
     try:
         found = await events_between(start, start + timedelta(days=days))
     except ImportError:
-        return "Calendar support needs new components; restart Jarvis to install them."
+        return "Calendar support needs new components; restart Huxley to install them."
     except httpx.HTTPStatusError as exc:
         return f"The calendar link was refused (HTTP {exc.response.status_code}). It may have been reset."
     except httpx.HTTPError as exc:

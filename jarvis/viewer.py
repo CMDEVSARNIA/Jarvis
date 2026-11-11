@@ -1,10 +1,10 @@
-"""The HUD's page viewer: show a web page inside Jarvis instead of a new tab.
+"""The HUD's page viewer: show a web page inside Huxley instead of a new tab.
 
 Many sites forbid being shown inside another page (X-Frame-Options / CSP
 frame-ancestors), so each URL gets one of four modes:
 - "frame":    the live page in an iframe (sites that allow it)
 - "embed":    an official embed URL (YouTube, Google Maps, Spotify)
-- "reader":   Jarvis fetches the page and shows its text in its own style
+- "reader":   Huxley fetches the page and shows its text in its own style
 - "external": login-type sites (mail, social) open in the normal browser
 
 Reader mode fetches pages from this machine, so every request (and every
@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, quote_plus, urljoin, urlparse
 
 import httpx
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Jarvis/1.0"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Huxley/1.0"
 MAX_BYTES = 3_000_000
 MAX_BLOCKS = 400
 
@@ -119,7 +119,7 @@ def map_embed(place: str) -> str:
 
 def frame_allowed(headers: httpx.Headers) -> bool:
     if headers.get("x-frame-options"):
-        return False  # DENY, SAMEORIGIN, ALLOW-FROM: none include Jarvis
+        return False  # DENY, SAMEORIGIN, ALLOW-FROM: none include Huxley
     csp = headers.get("content-security-policy", "")
     match = re.search(r"frame-ancestors([^;]*)", csp, re.I)
     if match and "*" not in match.group(1).split():

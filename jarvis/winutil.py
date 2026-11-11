@@ -1,4 +1,4 @@
-"""Small Windows helpers using only ctypes: clipboard, the Jarvis window, lock/sleep.
+"""Small Windows helpers using only ctypes: clipboard, the Huxley window, lock/sleep.
 
 Every function raises OSError("not on Windows") elsewhere, so callers can turn
 that into a friendly message.
@@ -97,7 +97,7 @@ def write_clipboard(text: str) -> None:
 
 
 def jarvis_windows() -> list[int]:
-    """Visible top-level windows showing the Jarvis HUD."""
+    """Visible top-level windows showing the Huxley HUD."""
     _require_windows()
     from ctypes import wintypes
 

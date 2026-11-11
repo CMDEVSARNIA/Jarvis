@@ -87,7 +87,7 @@ def check_telegram() -> None:
         bot = me.json().get("result", {})
         line("token belongs to", f"@{bot.get('username')}  ({bot.get('first_name')})")
         hook = httpx.get(base + "getWebhookInfo", timeout=15).json().get("result", {})
-        line("webhook", "was set - Jarvis clears it when it starts" if hook.get("url") else "none (good)")
+        line("webhook", "was set - Huxley clears it when it starts" if hook.get("url") else "none (good)")
         line("waiting messages", hook.get("pending_update_count", "?"))
     except Exception as exc:  # never print str(exc): it contains the token
         line("result", f"could not reach Telegram ({type(exc).__name__})")
@@ -96,7 +96,7 @@ def check_telegram() -> None:
 
 
 def check_phone() -> None:
-    """Phone-call settings (secrets never printed) and whether Twilio can reach Jarvis."""
+    """Phone-call settings (secrets never printed) and whether Twilio can reach Huxley."""
     import httpx
 
     section("Phone calls")
@@ -115,13 +115,13 @@ def check_phone() -> None:
                           headers={"ngrok-skip-browser-warning": "1"})
             reachable = r.status_code == 200 and "jarvis-hud" in r.text
             line("reachable by Twilio", "yes" if reachable
-                 else f"NO (HTTP {r.status_code}) - is Jarvis running with the tunnel?")
+                 else f"NO (HTTP {r.status_code}) - is Huxley running with the tunnel?")
         except httpx.HTTPError as exc:
-            line("reachable by Twilio", f"NO ({type(exc).__name__}) - start Jarvis first, then rerun")
+            line("reachable by Twilio", f"NO ({type(exc).__name__}) - start Huxley first, then rerun")
 
 
 def main() -> None:
-    print("Jarvis connection checkup (safe to share)")
+    print("Huxley connection checkup (safe to share)")
     section("System")
     line("python", sys.version.split()[0])
     line("os", f"{platform.system()} {platform.release()}")
@@ -163,7 +163,7 @@ def main() -> None:
     except Exception as exc:
         describe_error(exc)
 
-    section("Step 3: a message shaped exactly like Jarvis sends")
+    section("Step 3: a message shaped exactly like Huxley sends")
     from .brain import brain  # imported late so steps 1-2 run even if this import fails
     try:
         r = asyncio.run(brain._create([{"role": "user", "content": "[via hud | test] Reply with: ok"}]))
@@ -171,7 +171,7 @@ def main() -> None:
     except Exception as exc:
         describe_error(exc)
 
-    section("Step 4: streamed reply (how Jarvis talks now)")
+    section("Step 4: streamed reply (how Huxley talks now)")
     try:
         pieces: list[str] = []
         r = asyncio.run(brain._stream(
@@ -183,8 +183,8 @@ def main() -> None:
 
     section("How to read this")
     print("  Step 1 fails      -> network, proxy, base URL or key problem (see the sections above)")
-    print("  Only step 3 or 4 fails -> a setting in Jarvis's own request; send this report to Claude")
-    print("  All OK            -> restart Jarvis; it should work now")
+    print("  Only step 3 or 4 fails -> a setting in Huxley's own request; send this report to Claude")
+    print("  All OK            -> restart Huxley; it should work now")
     print("  'anthropic-workspace-id' in an error -> your key isn't scoped to a workspace. Either")
     print("     create a new key scoped to a workspace (Console > API keys > Create key), or copy the")
     print("     workspace ID (Console > Workspaces, starts with wrkspc_) into python -m jarvis.configure")

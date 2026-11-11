@@ -1,4 +1,4 @@
-"""What start-jarvis.bat runs: update, install what's new, ask for new settings, start.
+"""What start-huxley.bat runs: update, install what's new, ask for new settings, start.
 
     python -m jarvis.launcher [--no-update]
 """
@@ -38,7 +38,7 @@ def _install_requirements() -> None:
     if r.returncode == 0:
         updater._save_state(requirements=digest)
     else:
-        print("Some components failed to install; Jarvis will try again next start.")
+        print("Some components failed to install; Huxley will try again next start.")
 
 
 def _already_running() -> bool:
@@ -56,8 +56,8 @@ def main() -> int:
     _load_env()
     console = "--console" in sys.argv or sys.platform != "win32"
     if _already_running():
-        # Don't update files under a running Jarvis; just bring its window up.
-        print("Jarvis is already running (look for its icon near the clock). Opening it...")
+        # Don't update files under a running Huxley; just bring its window up.
+        print("Huxley is already running (look for the green H icon near the clock). Opening it...")
         subprocess.run([sys.executable, "-c",
                         "from jarvis.__main__ import open_hud; from jarvis.config import settings; "
                         "open_hud(f'http://localhost:{settings.port}/?token={settings.hud_token}')"])
@@ -81,7 +81,7 @@ def main() -> int:
     subprocess.Popen([str(pythonw if pythonw.exists() else sys.executable), "-m", "jarvis", "--tray", *args],
                      cwd=ROOT, creationflags=0x00000008 | 0x00000200,  # detached, new group
                      close_fds=True)
-    print("Jarvis is running in the tray (the round icon near the clock). You can close this window.")
+    print("Huxley is running in the tray (the green H icon near the clock). You can close this window.")
     return 0
 
 

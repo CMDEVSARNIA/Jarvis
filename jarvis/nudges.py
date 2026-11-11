@@ -1,4 +1,4 @@
-"""Proactive nudges: Jarvis speaks first.
+"""Proactive nudges: Huxley speaks first.
 
 - 10 minutes before a calendar event: a heads-up.
 - Once a day, if rain or snow looks likely in the next few hours: a warning.
@@ -45,7 +45,7 @@ async def deliver(text: str) -> None:
     events.publish({"type": "reminder", "text": text})
     if events.listeners() == 0:
         from . import desktop
-        desktop.notify("Jarvis", text)
+        desktop.notify("Huxley", text)
     try:
         await telegram_bot.send_to_owner(text)
     except Exception as exc:

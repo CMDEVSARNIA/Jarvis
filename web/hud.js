@@ -18,9 +18,10 @@
   let speakingPulse = 0;
   const labels = { idle: "STANDBY", listening: "LISTENING", thinking: "PROCESSING", speaking: "TRANSMITTING" };
   const THEME = document.body.dataset.theme === "classic" ? "classic" : "phosphor";
-  const NAME = (document.body.dataset.name || "Jarvis").trim();
+  const NAME = (document.body.dataset.name || "Huxley").trim();
   const NAME_UP = NAME.toUpperCase();
-  const NAME_RE = NAME.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // The wake word, plus spellings speech recognition tends to produce for "Huxley".
+  const NAME_RE = "(?:huxley|huxly|hucksley|huxleigh|hux ?lee|hugsley|huckley)";
 
   function setState(next, broadcast = true) {
     state = next;
@@ -243,7 +244,7 @@
     voice = pickVoice();
   }
 
-  // Speech is queued sentence by sentence, so Jarvis starts talking while
+  // Speech is queued sentence by sentence, so Huxley starts talking while
   // Claude is still writing the rest of the reply.
   let speechPending = 0;
   const idleCallbacks = [];
@@ -284,7 +285,7 @@
   // restarted without losing what was already heard.
   //   - Hold Space: listens while held, sends when you let go.
   //   - Click MIC: listens until you pause (or click again to send now).
-  //   - Wake word: always listening; "Jarvis ..." questions are sent after a pause.
+  //   - Wake word: always listening; "Huxley ..." questions are sent after a pause.
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, recActive = false, wantContinuous = false, pausedForSpeech = false;
   let mode = null;                 // null | "hold" | "tap" | "wake"
@@ -368,7 +369,7 @@
     }
     if (was === "wake") {
       const m = text.match(new RegExp(`\\b${NAME_RE}\\b[,.!?]?\\s*(.*)$`, "i"));
-      if (!m) { $("caption").textContent = ""; return; }   // not addressed to Jarvis
+      if (!m) { $("caption").textContent = ""; return; }   // not addressed to Huxley
       text = m[1].trim();
       if (!text) { speak("Yes?"); return; }
     }
@@ -377,7 +378,7 @@
 
   function startSession(newMode) {
     if (!rec) return;
-    if (newMode !== "followup") stopSpeaking();      // pressing talk interrupts Jarvis
+    if (newMode !== "followup") stopSpeaking();      // pressing talk interrupts Huxley
     clearTimeout(followupTimer);
     clearHeard();
     mode = newMode;

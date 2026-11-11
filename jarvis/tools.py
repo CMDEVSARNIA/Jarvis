@@ -1,4 +1,4 @@
-"""Tools Jarvis can use. Deliberately narrow: no arbitrary shell access.
+"""Tools Huxley can use. Deliberately narrow: no arbitrary shell access.
 Add your own by appending a schema to TOOLS and a handler to HANDLERS."""
 
 from __future__ import annotations
@@ -162,7 +162,7 @@ TOOLS: list[dict[str, Any]] = [
     {
         "name": "show_on_screen",
         "description": (
-            "Show a web page inside the Jarvis screen (live page, video/map embed, or a clean "
+            "Show a web page inside the Huxley screen (live page, video/map embed, or a clean "
             "reader view). Prefer this when the owner wants to see or read a page. Login sites "
             "(email, social media) automatically open in the browser instead."),
         "input_schema": _schema({"url": {"type": "string", "description": "Full http(s) URL"}}),
@@ -170,13 +170,13 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "show_map",
-        "description": "Show a map of a place or address inside the Jarvis screen.",
+        "description": "Show a map of a place or address inside the Huxley screen.",
         "input_schema": _schema({"place": {"type": "string"}}),
         "strict": True,
     },
     {
         "name": "close_screen",
-        "description": "Close the page or map currently shown on the Jarvis screen.",
+        "description": "Close the page or map currently shown on the Huxley screen.",
         "input_schema": _schema({}),
         "strict": True,
     },
@@ -221,7 +221,7 @@ TOOLS: list[dict[str, Any]] = [
     {
         "name": "look_at_screen",
         "description": (
-            "Take a screenshot of the owner's screen (Jarvis hides itself for a moment) to see "
+            "Take a screenshot of the owner's screen (Huxley hides itself for a moment) to see "
             "what they're looking at. ONLY when they explicitly ask about their screen."),
         "input_schema": _schema({}),
         "strict": True,
@@ -248,7 +248,7 @@ TOOLS: list[dict[str, Any]] = [
     {
         "name": "add_calendar_event",
         "description": (
-            "Open a pre-filled event in the owner's calendar for them to Save (Jarvis can't save "
+            "Open a pre-filled event in the owner's calendar for them to Save (Huxley can't save "
             "it itself). Work out exact local times from the message tag."),
         "input_schema": _schema({
             "title": {"type": "string"},

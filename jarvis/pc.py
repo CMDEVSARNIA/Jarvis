@@ -20,7 +20,7 @@ FOLDERS = {
     "downloads": HOME / "Downloads", "documents": HOME / "Documents", "desktop": HOME / "Desktop",
     "pictures": HOME / "Pictures", "music": HOME / "Music", "videos": HOME / "Videos",
 }
-# Never opened by Jarvis: anything that runs code.
+# Never opened by Huxley: anything that runs code.
 BLOCKED_EXT = {".exe", ".bat", ".cmd", ".com", ".ps1", ".psm1", ".vbs", ".vbe", ".js", ".jse",
                ".wsf", ".wsh", ".msi", ".msp", ".scr", ".lnk", ".url", ".reg", ".hta", ".cpl",
                ".jar", ".py", ".pyw", ".appref-ms", ".application", ".gadget", ".inf", ".sys", ".dll"}
@@ -28,7 +28,7 @@ _sleep_task: asyncio.Task | None = None
 
 
 def _windows_only() -> str | None:
-    return None if sys.platform == "win32" else "PC actions only work when Jarvis runs on Windows."
+    return None if sys.platform == "win32" else "PC actions only work when Huxley runs on Windows."
 
 
 async def pc_action(action: str, delay_minutes: float, confirmed: bool) -> str:
@@ -55,7 +55,7 @@ async def pc_action(action: str, delay_minutes: float, confirmed: bool) -> str:
     if action in ("shutdown", "restart"):
         seconds = max(60, int(delay * 60))  # always at least a minute to change your mind
         flag = "/s" if action == "shutdown" else "/r"
-        subprocess.run(["shutdown", flag, "/t", str(seconds), "/c", f"Jarvis: {action} requested"],
+        subprocess.run(["shutdown", flag, "/t", str(seconds), "/c", f"Huxley: {action} requested"],
                        check=True)
         events.publish({"type": "activity", "label": "PC", "text": f"{action} in {seconds // 60} min"})
         return f"The PC will {action} in {seconds // 60} minute(s). Say 'cancel' to stop it."

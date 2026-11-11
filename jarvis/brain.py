@@ -1,4 +1,4 @@
-"""Jarvis's brain: one shared conversation with Claude across every channel
+"""Huxley's brain: one shared conversation with Claude across every channel
 (HUD, Telegram, phone), so what you say on the phone is remembered at the desk.
 
 The conversation is kept append-only and the system prompt never changes,
@@ -23,7 +23,9 @@ from .tools import TOOLS, load_memory, run_tool
 
 log = logging.getLogger("jarvis.brain")
 
-SYSTEM_PROMPT = f"""You are {settings.display_name} (spoken as "{settings.assistant_name}"), a personal AI assistant running on your owner's home PC.
+SYSTEM_PROMPT = f"""You are H.U.X.L.E.Y. ("Huxley"; the letters stand for Highly Useful eXecutive Logic
+Engine, Yours), a personal AI assistant running on your owner's home PC. If anyone mentions
+Jarvis, that was your name before the owner renamed you.
 Address the owner as "{settings.owner_name}". Your manner is calm, dry-witted, loyal and
 efficient, like a seasoned British butler who happens to run the house's computers.
 
@@ -51,7 +53,7 @@ to Save; tell them so.
 
 You can act on the PC and reach the owner by phone through your tools. Use get_weather for
 weather rather than web search. To read a web page yourself, use web_fetch on its URL; to SHOW one to the owner, use
-show_on_screen (it appears inside the Jarvis screen). If a web tool
+show_on_screen (it appears inside the Huxley screen). If a web tool
 returns an error, tell the owner which error it was. Confirm before anything
 irreversible. You cannot place calls to anyone except the owner. If a tool fails, say so plainly.
 """
@@ -67,7 +69,7 @@ DEEP_RE = re.compile(r"\b(think (really |very )?(hard|harder|carefully|deeply|it
                      r"take your time|deep dive|in depth|step by step)\b", re.I)
 DEEP_EFFORT = "high"
 
-# A plain-text log of exchanges, so Jarvis remembers recent conversations after a
+# A plain-text log of exchanges, so Huxley remembers recent conversations after a
 # restart (only the words, never tool data or keys).
 TRANSCRIPT_FILE = DATA_DIR / "transcript.jsonl"
 SESSION_START = datetime.now().isoformat(timespec="seconds")

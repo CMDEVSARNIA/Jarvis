@@ -18,10 +18,11 @@ from typing import Callable
 from .config import ROOT
 
 log = logging.getLogger("jarvis.desktop")
-ICON_FILE = ROOT / "assets" / "jarvis.ico"
-TRAY_IMAGE = ROOT / "assets" / "tray.png"
-LAUNCHER = ROOT / "start-jarvis.bat"
-SHORTCUT_NAME = "Jarvis.lnk"
+ICON_FILE = ROOT / "assets" / "huxley.ico"
+TRAY_IMAGE = ROOT / "assets" / "tray-huxley.png"
+LAUNCHER = ROOT / "start-huxley.bat"
+SHORTCUT_NAME = "Huxley.lnk"
+LEGACY_SHORTCUT = "Jarvis.lnk"  # from before the rename; replaced automatically
 
 _tray = None  # the pystray icon while running
 
@@ -91,7 +92,7 @@ def start_hotkey(hotkey: str, on_press: Callable[[], None]) -> str:
 
 
 def bring_hud_to_front() -> bool:
-    """Restore and focus the Jarvis window. False if it isn't open."""
+    """Restore and focus the Huxley window. False if it isn't open."""
     if sys.platform != "win32":
         return False
     from . import winutil
@@ -118,18 +119,18 @@ def notify(title: str, text: str) -> None:
 
 # --------------------------------------------------------------- shortcuts --
 
-def _shortcut(folder: str, create: bool) -> bool:
-    """Create or remove Jarvis.lnk in a special folder ('Desktop' or 'Startup')."""
+def _shortcut(folder: str, create: bool, name: str = SHORTCUT_NAME) -> bool:
+    """Create or remove a shortcut in a special folder ('Desktop' or 'Startup')."""
     if sys.platform != "win32":
         return False
-    env = {**os.environ, "J_FOLDER": folder, "J_NAME": SHORTCUT_NAME, "J_TARGET": str(LAUNCHER),
+    env = {**os.environ, "J_FOLDER": folder, "J_NAME": name, "J_TARGET": str(LAUNCHER),
            "J_WD": str(ROOT), "J_ICON": str(ICON_FILE), "J_CREATE": "1" if create else "0"}
     # Values travel in environment variables, so paths with spaces need no quoting.
     script = (
         "$p = Join-Path ([Environment]::GetFolderPath($env:J_FOLDER)) $env:J_NAME; "
         "if ($env:J_CREATE -eq '1') { $s = (New-Object -ComObject WScript.Shell).CreateShortcut($p); "
         "$s.TargetPath = $env:J_TARGET; $s.WorkingDirectory = $env:J_WD; $s.IconLocation = $env:J_ICON; "
-        "$s.WindowStyle = 7; $s.Description = 'Start Jarvis'; $s.Save() } "
+        "$s.WindowStyle = 7; $s.Description = 'Start Huxley'; $s.Save() } "
         "elseif (Test-Path $p) { Remove-Item $p }")
     r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
                        env=env, capture_output=True, text=True, timeout=30,
@@ -139,13 +140,13 @@ def _shortcut(folder: str, create: bool) -> bool:
     return r.returncode == 0
 
 
-def shortcut_exists(folder: str) -> bool:
+def shortcut_exists(folder: str, name: str = SHORTCUT_NAME) -> bool:
     if sys.platform != "win32":
         return False
     base = {"Desktop": Path.home() / "Desktop",
             "Startup": Path(os.environ.get("APPDATA", "")) / "Microsoft/Windows/Start Menu/Programs/Startup"}
     path = base.get(folder)
-    return bool(path and (path / SHORTCUT_NAME).exists())
+    return bool(path and (path / name).exists())
 
 
 def set_start_with_windows(enabled: bool) -> bool:
@@ -153,11 +154,19 @@ def set_start_with_windows(enabled: bool) -> bool:
 
 
 def ensure_desktop_shortcut() -> None:
+    """Create the Huxley desktop shortcut once, and swap any old Jarvis shortcuts
+    (desktop and Start with Windows) for Huxley ones with the new icon."""
     from .updater import _save_state, _state
 
-    if sys.platform == "win32" and not _state().get("desktop_shortcut"):
-        if _shortcut("Desktop", True):
-            _save_state(desktop_shortcut=True)
+    if sys.platform != "win32":
+        return
+    for folder in ("Desktop", "Startup"):
+        if shortcut_exists(folder, LEGACY_SHORTCUT):
+            _shortcut(folder, False, LEGACY_SHORTCUT)
+            _shortcut(folder, True)
+    if not _state().get("huxley_shortcut"):
+        if shortcut_exists("Desktop") or _shortcut("Desktop", True):
+            _save_state(huxley_shortcut=True)
 
 
 # -------------------------------------------------------------------- tray --
@@ -185,14 +194,14 @@ def run_tray(on_open: Callable[[], None], on_restart: Callable[[], None],
         return lambda icon, item: threading.Thread(target=fn, daemon=True).start()
 
     menu = pystray.Menu(
-        pystray.MenuItem("Open Jarvis", run(on_open), default=True),
+        pystray.MenuItem("Open Huxley", run(on_open), default=True),
         pystray.MenuItem("Check for updates", run(on_update)),
-        pystray.MenuItem("Restart Jarvis", run(on_restart)),
+        pystray.MenuItem("Restart Huxley", run(on_restart)),
         pystray.MenuItem("Start with Windows", toggle_startup,
                          checked=lambda item: shortcut_exists("Startup")),
         pystray.MenuItem("Open log", open_log),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Quit Jarvis", lambda icon, item: on_quit()),
+        pystray.MenuItem("Quit Huxley", lambda icon, item: on_quit()),
     )
     from .config import settings
     _tray = pystray.Icon("jarvis", Image.open(TRAY_IMAGE), settings.display_name, menu)

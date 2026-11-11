@@ -1,4 +1,4 @@
-# J.A.R.V.I.S.
+# H.U.X.L.E.Y.
 
 A home-PC assistant run by Claude, with a movie-style HUD, a voice, and a line to your phone.
 
@@ -6,7 +6,7 @@ A home-PC assistant run by Claude, with a movie-style HUD, a voice, and a line t
 
 | You want | How it works | Cost |
 |---|---|---|
-| Talk to it at the PC | Browser HUD (Chrome/Edge): push-to-talk or "Jarvis, ..." wake word, spoken replies | Free |
+| Talk to it at the PC | Browser HUD (Chrome/Edge): push-to-talk or "Huxley, ..." wake word, spoken replies | Free |
 | Chat from your phone | Telegram bot, long polling, no ports opened | Free |
 | Have it **call you** | Twilio voice call to your cell; you talk, it answers | Twilio number + per-minute |
 | Brain | Claude (`claude-opus-5-5`) via the Anthropic API, with tools | Pay per use |
@@ -19,7 +19,7 @@ remembered at the desk.
 - `web_search`, `web_fetch`: look things up and read web pages (Opus/Sonnet models)
 - `get_weather`, `get_time`: weather and world time (free Open-Meteo service, no key)
 - `set_reminder`, `set_timer`, `list_reminders`, `cancel_reminder`: reminders are spoken on the
-  PC and sent to Telegram; ones missed while Jarvis was off arrive late, marked as such
+  PC and sent to Telegram; ones missed while Huxley was off arrive late, marked as such
 - `add_to_list`, `show_list`, `remove_from_list`: to-do, shopping and any other lists
 - `show_on_screen`, `show_map`, `close_screen`: show pages inside the HUD's viewer panel: the live
   page where the site allows it, official YouTube/Spotify/Maps embeds, otherwise a clean reader
@@ -29,9 +29,9 @@ remembered at the desk.
 - `save_protocol`, `run_protocol`, `list_protocols`, `delete_protocol`: named routines such as
   "work mode", built only from the actions above
 
-Talking to Jarvis feels like a conversation: replies are streamed and spoken sentence by
+Talking to Huxley feels like a conversation: replies are streamed and spoken sentence by
 sentence while Claude is still writing, a short acknowledgment plays while tools run, and after
-a spoken answer Jarvis listens for a follow-up without the wake word (say "that's all" to end).
+a spoken answer Huxley listens for a follow-up without the wake word (say "that's all" to end).
 It waits longer when you trail off ("so I was thinking...") and less when a question sounds done.
 
 Smarter extras: it can look at your screen or read what you copied (only when you ask), keeps
@@ -41,7 +41,7 @@ when you say "think hard" or press THINK HARDER, reads your calendar from its pr
 evening recap), and handles PC actions (lock, sleep, shutdown with confirmation, folders,
 finding and opening your files, never programs).
 
-Jarvis also greets you when the HUD opens, gives a daily briefing (weather, reminders, to-dos)
+Huxley also greets you when the HUD opens, gives a daily briefing (weather, reminders, to-dos)
 at `BRIEFING_TIME` on the PC and Telegram, shows live weather/reminder/to-do panels, and
 remembers your recent conversations across restarts (`data/transcript.jsonl`).
 - `system_status`: CPU / memory / disk / battery
@@ -54,26 +54,27 @@ remembers your recent conversations across restarts (`data/transcript.jsonl`).
 There is deliberately **no** arbitrary shell/command tool. Anything that can reach your phone
 can drive these tools, so each one is narrow. Add new ones in `jarvis/tools.py`.
 
-**Full step-by-step guide (PC, cloud server, Telegram, phone calls): [docs/Jarvis-Setup-Guide.pdf](docs/Jarvis-Setup-Guide.pdf)**
+**Full step-by-step guide (PC, cloud server, Telegram, phone calls): [docs/Huxley-Setup-Guide.pdf](docs/Huxley-Setup-Guide.pdf)**
 
 ## Look and name
 
-The screen defaults to a green CRT terminal (`HUD_THEME=phosphor`): live voice oscilloscope,
-hourly rain chart, schedule and comms log, all in capitals. `HUD_THEME=classic` brings back the
-cyan look. `ASSISTANT_NAME` renames the assistant everywhere: screen, window title, how Claude
-refers to itself, and the wake word.
+The assistant is **H.U.X.L.E.Y.** ("Huxley": Highly Useful eXecutive Logic Engine, Yours),
+formerly Jarvis. The screen is a green CRT terminal (`HUD_THEME=phosphor`) with a live voice
+oscilloscope, hourly rain chart, schedule and comms log, all in capitals; `HUD_THEME=classic`
+brings back the cyan look. Say "Huxley" for the wake word. The code folder and GitHub
+repository keep the internal name `jarvis`.
 
 ## Desktop
 
-On Windows, `start-jarvis.bat` checks for updates and then runs Jarvis in the background with a
+On Windows, `start-huxley.bat` checks for updates and then runs Huxley in the background with a
 tray icon (Open, Check for updates, Restart, Start with Windows, Open log, Quit); logs go to
 `data/jarvis.log`. Press Ctrl+Alt+Space in any app to talk (`TALK_HOTKEY`). Reminders and nudges
-become Windows notifications when the Jarvis window is closed. A Jarvis desktop shortcut is
-created on first run. `start-jarvis.bat --console` keeps the old console window.
+become Windows notifications when the Huxley window is closed. A Huxley desktop shortcut is
+created on first run. `start-huxley.bat --console` keeps the old console window.
 
 ## Updates
 
-`start-jarvis.bat` updates Jarvis every time it starts: it checks GitHub, downloads only when
+`start-huxley.bat` updates Huxley every time it starts: it checks GitHub, downloads only when
 something changed, installs any new components, and asks only for settings that are new.
 Your `.env`, `data/` (reminders, lists, memory), `config/apps.json` and `ngrok.exe` are never
 overwritten. Turn it off with `AUTO_UPDATE=false` in `.env`.
@@ -82,7 +83,7 @@ overwritten. Turn it off with `AUTO_UPDATE=false` in `.env`.
 
 1. Install Python 3.10+ from python.org (tick "Add to PATH").
 2. Get an API key at <https://platform.claude.com>. This is billed separately from a claude.ai subscription.
-3. Double-click `start-jarvis.bat`. The first run installs everything and asks for your settings.
+3. Double-click `start-huxley.bat`. The first run installs everything and asks for your settings.
    Change them later with `.venv\Scripts\python -m jarvis.configure`.
 4. The HUD opens in your browser. Use **Edge** for the best built-in voice ("Microsoft Ryan" is the
    closest to the films). Hold **Space** or click **MIC** to talk.
@@ -93,7 +94,7 @@ then `.venv/bin/python -m jarvis`.
 ### Let Claude Code do the cloud setup
 
 On your laptop, open this folder in Claude Code and run `/jarvis-cloud-setup`. It creates the
-Google Cloud server with the right free-tier settings, installs Jarvis, and checks it's working.
+Google Cloud server with the right free-tier settings, installs Huxley, and checks it's working.
 You still create your keys yourself and type them into the settings tool, never into the chat.
 
 ### No PC? Run it on a cloud server
@@ -105,7 +106,7 @@ On a fresh Ubuntu VM: `git clone` this repo, then `bash deploy/setup-server.sh`,
 ### Phone chat (Telegram)
 
 1. In Telegram, message **@BotFather**, send `/newbot`, copy the token into `TELEGRAM_BOT_TOKEN`.
-2. Restart Jarvis and send your bot any message. It replies with your chat id.
+2. Restart Huxley and send your bot any message. It replies with your chat id.
 3. Put that in `TELEGRAM_OWNER_CHAT_ID`, restart. Messages from anyone else are ignored.
    `/reset` clears the conversation.
 
@@ -119,9 +120,9 @@ Twilio has to reach your PC over the internet, so this needs a tunnel.
 2. Run a tunnel to port 8000, e.g. `cloudflared tunnel --url http://localhost:8000`
    or `ngrok http 8000`, and put the https URL in `PUBLIC_BASE_URL`. A free quick tunnel changes URL on
    every restart; a named Cloudflare tunnel or a paid ngrok domain doesn't.
-3. Restart Jarvis. Click **CALL MY PHONE**, or ask "Jarvis, call me".
+3. Restart Huxley. Click **CALL MY PHONE**, or ask "Huxley, call me".
 
-Calling **into** Jarvis from your cell is off by default (`ALLOW_INBOUND_CALLS`), because caller ID
+Calling **into** Huxley from your cell is off by default (`ALLOW_INBOUND_CALLS`), because caller ID
 can be spoofed. If you turn it on, point the Twilio number's "A call comes in" webhook at
 `PUBLIC_BASE_URL/twilio/voice`.
 
@@ -154,5 +155,5 @@ jarvis/server.py        FastAPI: HUD, WebSocket, call-me endpoint
 jarvis/phone.py         Twilio call webhooks
 jarvis/telegram_bot.py  Telegram long-polling bot
 web/                    HUD (canvas reactor, speech in/out)
-config/apps.json        Apps Jarvis may launch
+config/apps.json        Apps Huxley may launch
 ```

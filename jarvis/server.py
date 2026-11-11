@@ -55,7 +55,7 @@ async def index() -> HTMLResponse:
     page = (WEB_DIR / "index.html").read_text(encoding="utf-8")
     theme = settings.hud_theme if settings.hud_theme in ("phosphor", "classic") else "phosphor"
     page = (page.replace("{{DISPLAY_NAME}}", escape(settings.display_name))
-                .replace("{{NAME}}", escape(settings.assistant_name.strip() or "Jarvis"))
+                .replace("{{NAME}}", escape(settings.assistant_name))
                 .replace("{{THEME}}", theme))
     return HTMLResponse(page, headers={"Cache-Control": "no-store"})
 

@@ -1,4 +1,4 @@
-"""Chat with Jarvis from your phone over Telegram.
+"""Chat with Huxley from your phone over Telegram.
 
 Uses long polling, so it works from behind a home router with no public URL.
 Only the owner's chat id is answered; everyone else is ignored.
@@ -77,7 +77,7 @@ async def run() -> None:
                 if status in (401, 404):
                     _set_status(False, "bot token rejected - copy it from @BotFather again")
                 elif status == 409:
-                    _set_status(False, "another copy of Jarvis is using this bot")
+                    _set_status(False, "another copy of Huxley is using this bot")
                 else:
                     _set_status(False, "can't reach Telegram - retrying")
                 await asyncio.sleep(5)
@@ -119,7 +119,7 @@ async def _handle(client: httpx.AsyncClient, update: dict) -> None:
         await _call(client, "sendMessage", chat_id=chat_id, text=(
             f"Your chat id is {chat_id}. On the PC, run the settings tool "
             "(python -m jarvis.configure), enter this number at 'Your chat id', "
-            "then restart Jarvis."))
+            "then restart Huxley."))
         return
     if chat_id != settings.telegram_owner_chat_id:
         log.warning("Ignoring Telegram message from chat %s: the saved owner chat id is %s. "

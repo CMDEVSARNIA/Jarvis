@@ -1,7 +1,7 @@
 """Protocols: named routines like "work mode" or "movie night".
 
-A protocol is a short list of steps built only from Jarvis's existing, narrow
-actions, so a protocol can never do more than Jarvis could already do one step
+A protocol is a short list of steps built only from Huxley's existing, narrow
+actions, so a protocol can never do more than Huxley could already do one step
 at a time. Steps run directly, without a Claude call per step.
 """
 
@@ -24,7 +24,7 @@ ACTIONS = {
     "show_list": "a list name, e.g. to-do",
     "weather": "a city, or empty for home",
     "wait": "seconds to pause, up to 30",
-    "say": "a sentence Jarvis says when the protocol runs",
+    "say": "a sentence Huxley says when the protocol runs",
 }
 
 

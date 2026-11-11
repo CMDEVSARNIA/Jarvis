@@ -1,7 +1,7 @@
 """Reminders, timers and lists, stored in data/ so they survive restarts.
 
 Reminders fire without involving Claude (no cost): they're spoken on the HUD and
-sent to Telegram. If Jarvis was off when one was due, it's delivered on startup,
+sent to Telegram. If Huxley was off when one was due, it's delivered on startup,
 marked as late.
 """
 
@@ -117,9 +117,9 @@ async def _deliver(item: dict[str, Any], late_by: timedelta) -> None:
     text = f"{prefix}: {item['text']}{late}"
     log.info("Delivering %s %s", prefix.lower(), item["id"])
     events.publish({"type": "reminder", "text": text})
-    if events.listeners() == 0:  # Jarvis window closed: show a Windows notification
+    if events.listeners() == 0:  # Huxley window closed: show a Windows notification
         from . import desktop
-        desktop.notify("Jarvis reminder", text)
+        desktop.notify("Huxley reminder", text)
     try:
         await telegram_bot.send_to_owner(text)
     except Exception as exc:  # never let one failed send stop the scheduler

@@ -1,9 +1,9 @@
 """Greeting, daily briefing and the live data behind the HUD's side panels.
 
-- When the HUD first opens after Jarvis starts: the day's briefing if it hasn't
+- When the HUD first opens after Huxley starts: the day's briefing if it hasn't
   been given yet today (from 4 AM), otherwise a short welcome (no Claude call).
 - At BRIEFING_TIME (if set): the briefing, spoken on the PC and sent to Telegram.
-  If Jarvis wasn't running then, the HUD greeting covers it instead.
+  If Huxley wasn't running then, the HUD greeting covers it instead.
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ async def give_briefing(send_telegram: bool) -> str:
 
 
 async def greet() -> None:
-    """Called when the HUD connects for the first time since Jarvis started."""
+    """Called when the HUD connects for the first time since Huxley started."""
     from . import events
 
     global _greeted

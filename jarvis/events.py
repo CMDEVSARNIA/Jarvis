@@ -1,4 +1,4 @@
-"""Tiny pub/sub so every open HUD sees what Jarvis is doing on any channel
+"""Tiny pub/sub so every open HUD sees what Huxley is doing on any channel
 (HUD, Telegram, phone call)."""
 
 from __future__ import annotations
@@ -36,4 +36,4 @@ def publish(event: dict[str, Any]) -> None:
         try:
             q.put_nowait(event)
         except asyncio.QueueFull:
-            pass  # a stalled HUD tab shouldn't block Jarvis
+            pass  # a stalled HUD tab shouldn't block Huxley

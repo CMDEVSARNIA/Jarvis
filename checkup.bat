@@ -1,8 +1,8 @@
 @echo off
-REM Double-click to check Jarvis can reach Claude. The report is safe to share.
+REM Double-click to check Huxley can reach Claude. The report is safe to share.
 cd /d "%~dp0"
 if not exist .venv\Scripts\python.exe (
-  echo Jarvis is not installed in this folder yet.
+  echo Huxley is not installed in this folder yet.
   echo Double-click start-jarvis.bat in this folder first, then run this again.
   pause
   exit /b

@@ -1,4 +1,4 @@
-"""Start Jarvis:  python -m jarvis"""
+"""Start Huxley:  python -m jarvis"""
 
 from __future__ import annotations
 
@@ -58,13 +58,13 @@ def open_hud(url: str) -> None:
 
 
 def start_tunnel() -> str:
-    """On a PC, start ngrok so Twilio can reach Jarvis. Returns a status line."""
+    """On a PC, start ngrok so Twilio can reach Huxley. Returns a status line."""
     if not settings.ngrok_domain:
         return "off"
     exe = shutil.which("ngrok") or next(
         (str(p) for p in (ROOT / "ngrok.exe", ROOT / "ngrok") if p.exists()), None)
     if not exe:
-        return "ngrok not found - put ngrok.exe in the Jarvis folder"
+        return "ngrok not found - put ngrok.exe in the Huxley folder"
     try:
         help_text = subprocess.run([exe, "http", "--help"], capture_output=True, text=True,
                                    timeout=20).stdout
@@ -107,7 +107,7 @@ def _setup_logging(tray: bool) -> None:
 def _fail(tray: bool, *lines: str) -> None:
     if tray:
         from . import desktop
-        desktop.message_box("Jarvis can't start", "\n".join(lines))
+        desktop.message_box("Huxley can't start", "\n".join(lines))
     for line in lines:
         print(line)
     sys.exit(1)
@@ -129,8 +129,8 @@ def run_tray(url: str, open_browser: bool) -> None:
             break
         time.sleep(0.1)
     if not server.started:
-        _fail(True, f"Port {settings.port} is busy: Jarvis is probably already running.",
-              "Look for the Jarvis icon in the tray, near the clock.")
+        _fail(True, f"Port {settings.port} is busy: Huxley is probably already running.",
+              "Look for the Huxley icon in the tray, near the clock.")
     if open_browser:
         open_hud(url)
 
@@ -152,13 +152,13 @@ def run_tray(url: str, open_browser: bool) -> None:
         """Stop this copy and start again through the launcher (updates + new components)."""
         server.should_exit = True
         thread.join(15)
-        subprocess.Popen(["cmd", "/c", "start", "/min", "", str(ROOT / "start-jarvis.bat"),
+        subprocess.Popen(["cmd", "/c", "start", "/min", "", str(ROOT / "start-huxley.bat"),
                           "--no-browser"], cwd=ROOT, creationflags=0x00000008)  # DETACHED_PROCESS
         desktop.stop_tray()
 
     def check_updates() -> None:
         message = updater.update()
-        desktop.notify("Jarvis", message)
+        desktop.notify("Huxley", message)
         if message.startswith("Updated"):
             time.sleep(3)
             relaunch()
