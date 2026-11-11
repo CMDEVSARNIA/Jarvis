@@ -95,7 +95,9 @@ def _setup_logging(tray: bool) -> None:
                                       backupCount=3, encoding="utf-8")
         logging.basicConfig(level=logging.INFO, handlers=[handler],
                             format="%(asctime)s %(name)s: %(message)s")
-        sys.stdout = sys.stderr = handler.stream
+        # print() output gets its own file: if anything ever reconfigures logging and
+        # closes the log handler's file, printing must still work.
+        sys.stdout = sys.stderr = open(ROOT / "data" / "output.log", "a", encoding="utf-8", buffering=1)
     else:
         logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
     # httpx logs every request URL, and Telegram puts the bot token in the URL.
@@ -120,8 +122,10 @@ def run_tray(url: str, open_browser: bool) -> None:
     from . import desktop, events, updater
 
     log = logging.getLogger("jarvis")
+    # log_config=None: uvicorn must not reset logging (its reset closed our log file).
     server = uvicorn.Server(uvicorn.Config("jarvis.server:app", host=settings.host,
-                                           port=settings.port, log_level="warning"))
+                                           port=settings.port, log_level="warning",
+                                           log_config=None))
     thread = threading.Thread(target=server.run, name="server", daemon=True)
     thread.start()
     for _ in range(200):
