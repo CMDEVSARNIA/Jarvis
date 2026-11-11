@@ -38,8 +38,20 @@ def _get(url: str, accept: str = "application/vnd.github+json") -> bytes:
     token = os.environ.get("GITHUB_TOKEN", "").strip()  # only needed for a private repo
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30,
+                                context=_ssl_context()) as r:
         return r.read()
+
+
+def _ssl_context():
+    """Use certifi's certificate list when it's installed (it comes with Huxley's
+    packages); some Windows setups lack certificates Python's default needs."""
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
 
 
 def _state() -> dict:
@@ -124,5 +136,8 @@ def update() -> str:
             return (f"Couldn't check for updates (GitHub said {exc.code}). If the repository is "
                     "private, add a read-only GITHUB_TOKEN to .env.")
         return f"Couldn't check for updates (GitHub error {exc.code}). Starting anyway."
-    except (urllib.error.URLError, OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
-        return f"Couldn't check for updates ({type(exc).__name__}). Starting anyway."
+    except urllib.error.URLError as exc:
+        reason = getattr(exc, "reason", exc)
+        return f"Couldn't reach GitHub to check for updates ({reason}). Starting anyway."
+    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as exc:
+        return f"Couldn't check for updates ({type(exc).__name__}: {exc}). Starting anyway."
