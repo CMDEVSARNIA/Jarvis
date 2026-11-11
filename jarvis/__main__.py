@@ -192,7 +192,12 @@ def main() -> None:
         print(f"  Tunnel:    {start_tunnel()}")
     print()
     if tray:
-        run_tray(url, open_browser=not headless)
+        try:
+            run_tray(url, open_browser=not headless)
+        except Exception:
+            logging.getLogger("jarvis").exception("Huxley stopped because of an error")
+            _fail(True, "Huxley stopped because of an error.",
+                  "Details are in data\\jarvis.log (tray icon > Open log, or the Huxley folder).")
         return
     if not headless:
         threading.Timer(1.5, open_hud, args=[url]).start()

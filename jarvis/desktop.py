@@ -120,6 +120,9 @@ def notify(title: str, text: str) -> None:
 # --------------------------------------------------------------- shortcuts --
 
 def _shortcut(folder: str, create: bool, name: str = SHORTCUT_NAME) -> bool:
+    # Desktop: a normal window, so any question the launcher asks is visible.
+    # Startup: minimized, so logging in stays tidy (the launcher pops itself up if it
+    # ever needs an answer).
     """Create or remove a shortcut in a special folder ('Desktop' or 'Startup')."""
     if sys.platform != "win32":
         return False
@@ -130,7 +133,8 @@ def _shortcut(folder: str, create: bool, name: str = SHORTCUT_NAME) -> bool:
         "$p = Join-Path ([Environment]::GetFolderPath($env:J_FOLDER)) $env:J_NAME; "
         "if ($env:J_CREATE -eq '1') { $s = (New-Object -ComObject WScript.Shell).CreateShortcut($p); "
         "$s.TargetPath = $env:J_TARGET; $s.WorkingDirectory = $env:J_WD; $s.IconLocation = $env:J_ICON; "
-        "$s.WindowStyle = 7; $s.Description = 'Start Huxley'; $s.Save() } "
+        "$s.WindowStyle = $(if ($env:J_FOLDER -eq 'Startup') { 7 } else { 1 }); "
+        "$s.Description = 'Start Huxley'; $s.Save() } "
         "elseif (Test-Path $p) { Remove-Item $p }")
     r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
                        env=env, capture_output=True, text=True, timeout=30,
@@ -164,9 +168,9 @@ def ensure_desktop_shortcut() -> None:
         if shortcut_exists(folder, LEGACY_SHORTCUT):
             _shortcut(folder, False, LEGACY_SHORTCUT)
             _shortcut(folder, True)
-    if not _state().get("huxley_shortcut"):
-        if shortcut_exists("Desktop") or _shortcut("Desktop", True):
-            _save_state(huxley_shortcut=True)
+    if not _state().get("huxley_shortcut_v2"):  # v2: desktop shortcut no longer minimized
+        if _shortcut("Desktop", True):
+            _save_state(huxley_shortcut_v2=True)
 
 
 # -------------------------------------------------------------------- tray --

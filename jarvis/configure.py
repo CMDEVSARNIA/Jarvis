@@ -159,6 +159,21 @@ def _choose_model() -> None:
     set_key(str(ENV), "JARVIS_MODEL", MODELS.get(choice, MODELS["1"])[0], quote_mode="never")
 
 
+def _bring_console_forward() -> None:
+    """If this window was started minimized (e.g. at login), pop it up so the
+    questions don't sit unseen on the taskbar."""
+    if os.name != "nt":
+        return
+    import ctypes
+
+    hwnd = ctypes.WinDLL("kernel32").GetConsoleWindow()
+    if hwnd:
+        user32 = ctypes.WinDLL("user32")
+        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+        user32.SetForegroundWindow(hwnd)
+    print("\a", end="", flush=True)  # a short beep to draw attention
+
+
 def ask_missing(cur: dict) -> None:
     """Only settings that are new since the last update (absent from .env), plus any
     saved key that's clearly broken (e.g. a failed paste). Silent when there's none."""
@@ -171,6 +186,7 @@ def ask_missing(cur: dict) -> None:
             todo.append((key, prompt, secret, default))
     if not todo:
         return
+    _bring_console_forward()
     print("\nA few settings need your input (press Enter for the suggestion in brackets):")
     for key, prompt, secret, default in todo:
         if key == "JARVIS_MODEL":

@@ -78,11 +78,30 @@ def main() -> int:
         return subprocess.call([sys.executable, "-m", "jarvis", *args])
     # Windows: run in the tray, without a console window.
     pythonw = Path(sys.executable).with_name("pythonw.exe")
-    subprocess.Popen([str(pythonw if pythonw.exists() else sys.executable), "-m", "jarvis", "--tray", *args],
-                     cwd=ROOT, creationflags=0x00000008 | 0x00000200,  # detached, new group
-                     close_fds=True)
-    print("Huxley is running in the tray (the green H icon near the clock). You can close this window.")
-    return 0
+    proc = subprocess.Popen([str(pythonw if pythonw.exists() else sys.executable), "-m", "jarvis", "--tray", *args],
+                            cwd=ROOT, creationflags=0x00000008 | 0x00000200,  # detached, new group
+                            close_fds=True)
+    print("Starting Huxley", end="", flush=True)
+    import time
+    for _ in range(40):  # up to 20 seconds
+        time.sleep(0.5)
+        print(".", end="", flush=True)
+        if _already_running():
+            print("\nHuxley is running in the tray (the green H icon near the clock). "
+                  "This window closes by itself.")
+            time.sleep(3)
+            return 0
+        if proc.poll() is not None:
+            break
+    print("\n\nHuxley didn't start. The last lines of its log (data\\jarvis.log):\n")
+    log = ROOT / "data" / "jarvis.log"
+    if log.exists():
+        for line in log.read_text(encoding="utf-8", errors="replace").splitlines()[-25:]:
+            print("  " + line)
+    else:
+        print("  (no log yet)")
+    print("\nTake a photo of this window and send it to Claude, or run: start-huxley.bat --console")
+    return 1  # makes the .bat pause so you can read this
 
 
 def _apply_start_with_windows() -> None:
