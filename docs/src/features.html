@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Jarvis Feature Guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap">
+<style>
+  @page { size: letter; margin: 0; }
+  :root {
+    --bg: #03101a; --deep: #02070d; --card: #071b29; --line: #1d4a63; --rule: #12334a;
+    --cyan: #4fd1ff; --cyan-soft: #9be4ff; --amber: #ffb547; --amber-line: #6b4a17;
+    --text: #d6f1ff; --muted: #8db3c7; --white: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--deep); }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page {
+    width: 8.5in; height: 11in; padding: 0.6in 0.65in 0.55in; position: relative; overflow: hidden;
+    background: var(--bg); page-break-after: always; display: flex; flex-direction: column;
+  }
+  .page:last-child { page-break-after: auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 22px; }
+  .brand { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .32em; color: var(--cyan); font-size: 15px; }
+  .crumb { font-size: 11px; letter-spacing: .18em; color: var(--muted); }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .14em; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--rule); }
+  h1 { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .14em; color: var(--cyan); font-size: 34px; margin: 0 0 4px; text-transform: uppercase; }
+  h2 { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .16em; color: var(--white); font-size: 17px; margin: 18px 0 8px; text-transform: uppercase; }
+  .lead { color: var(--muted); font-size: 13.5px; line-height: 1.55; margin: 0 0 16px; max-width: 6.4in; }
+  p { font-size: 12.5px; line-height: 1.55; margin: 0 0 8px; }
+  b, strong { color: var(--white); font-weight: 600; }
+  .chip { display: inline-block; font-family: Rajdhani, sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .26em; padding: 4px 12px; border: 1px solid var(--cyan); border-radius: 999px; color: var(--cyan); }
+  .chip.amber { border-color: var(--amber); color: var(--amber); }
+  .page > .chip { align-self: flex-start; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  .steps li { display: grid; grid-template-columns: 22px 30px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; }
+  .box { width: 16px; height: 16px; border: 1.5px solid var(--cyan); border-radius: 4px; margin-top: 2px; }
+  .num { font-family: Rajdhani, sans-serif; font-weight: 700; color: var(--cyan); font-size: 17px; line-height: 1.2; }
+  .steps li .sub { color: var(--muted); font-size: 11.5px; display: block; margin-top: 3px; }
+
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11.5px; color: var(--cyan-soft); }
+  .term { background: var(--deep); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 8px 0 4px; }
+  .term .bar { display: flex; gap: 6px; margin-bottom: 9px; }
+  .term .bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .term pre { margin: 0; font-family: "JetBrains Mono", monospace; font-size: 12px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+  .term pre .p { color: var(--cyan); }
+  .term pre .c { color: var(--muted); }
+
+  .callout { border: 1px solid var(--amber-line); background: rgba(255,181,71,0.07); border-radius: 12px; padding: 11px 14px; margin: 12px 0; font-size: 12px; line-height: 1.5; }
+  .callout .t { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .2em; color: var(--amber); font-size: 12.5px; display: block; margin-bottom: 3px; }
+  .callout.info { border-color: var(--line); background: rgba(79,209,255,0.06); }
+  .callout.info .t { color: var(--cyan); }
+
+  .check { margin-top: 14px; display: flex; gap: 14px; align-items: center; border: 1.5px solid var(--cyan); border-radius: 14px; padding: 12px 16px; background: rgba(79,209,255,0.07); }
+  .check svg { flex: none; }
+  .check .t { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .22em; color: var(--cyan); font-size: 13px; }
+  .check p { margin: 2px 0 0; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+  .card h3 { margin: 0 0 6px; font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .16em; font-size: 13.5px; color: var(--cyan); text-transform: uppercase; }
+  .card p, .card li { font-size: 12px; }
+  .card ul { margin: 0; padding-left: 16px; line-height: 1.6; }
+
+  .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .table th, .table td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.45; }
+  .table th { background: var(--card); color: var(--muted); font-weight: 600; font-size: 10.5px; letter-spacing: .16em; }
+  .table tr:last-child td { border-bottom: none; }
+  .compact .table th, .compact .table td { padding: 6px 12px; }
+  .compact .term pre { line-height: 1.6; }
+  .compact .steps li { padding: 8px 12px; }
+  .compact .callout { margin: 9px 0; padding: 9px 14px; }
+  .compact .lead { margin-bottom: 10px; }
+  .compact h1 { font-size: 30px; }
+  .compact .check { margin-top: 8px; padding: 8px 14px; }
+  .compact .topbar { margin-bottom: 14px; }
+  .compact .term { margin: 4px 0 2px; padding: 10px 14px; }
+  .compact .steps { gap: 7px; }
+  .table td:first-child { color: var(--white); font-weight: 600; width: 34%; }
+
+  /* cover */
+  .cover { justify-content: flex-start; }
+  .reactor { display: flex; justify-content: center; margin: 18px 0 10px; }
+  .cover h1 { font-size: 46px; text-align: center; letter-spacing: .3em; margin-top: 4px; }
+  .cover .sub { text-align: center; color: var(--muted); font-size: 15px; margin: 0 0 18px; letter-spacing: .04em; }
+  .timeline { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 8px; }
+  .timeline .card { padding: 12px; }
+  .timeline .n { font-family: Rajdhani, sans-serif; font-weight: 700; color: var(--cyan); font-size: 26px; line-height: 1; }
+  .timeline .k { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .14em; color: var(--white); font-size: 13px; margin: 6px 0 4px; text-transform: uppercase; }
+  .timeline .d { font-size: 11px; color: var(--muted); line-height: 1.45; }
+  .timeline .m { font-size: 10.5px; color: var(--cyan-soft); margin-top: 6px; letter-spacing: .08em; }
+  .notepad { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .field { border: 1px dashed var(--line); border-radius: 10px; padding: 9px 12px; font-size: 11px; color: var(--muted); letter-spacing: .06em; height: 50px; }
+
+  .cmd { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--cyan-soft); }
+  .quote { color: var(--white); font-style: italic; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+  .feat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 11px; }
+  .feat .k { font-family: Rajdhani, sans-serif; font-weight: 700; letter-spacing: .14em; color: var(--cyan); font-size: 12.5px; text-transform: uppercase; }
+  .feat .d { font-size: 11px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
+  .feat .q { font-size: 11px; color: var(--white); font-style: italic; margin-top: 5px; line-height: 1.4; }
+  .table td:first-child { width: 30%; }
+  .tight .table th, .tight .table td { padding: 6px 11px; }
+  .tight h2 { margin: 13px 0 7px; }
+  .tight .callout { margin: 9px 0; padding: 9px 13px; }
+  .tight .lead { margin-bottom: 10px; }
+  .tight p { margin-bottom: 6px; }
+  .kbd { display: inline-block; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font-size: 11px; color: var(--white); background: var(--deep); }
+</style>
+</head>
+<body>
+
+<section class="page ">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">OVERVIEW</span></div>
+
+  <div class="reactor" style="display:flex;justify-content:center;margin:6px 0 4px"><svg width="118" height="118" viewBox="0 0 270 270" aria-hidden="true">
+      <circle cx="135" cy="135" r="128" fill="none" stroke="#4fd1ff" stroke-opacity="0.35" stroke-width="6" stroke-dasharray="1 7.4"/>
+      <circle cx="135" cy="135" r="112" fill="none" stroke="#4fd1ff" stroke-width="3" stroke-dasharray="150 85" stroke-linecap="round" transform="rotate(-30 135 135)"/>
+      <circle cx="135" cy="135" r="92" fill="none" stroke="#4fd1ff" stroke-opacity="0.45" stroke-width="8" stroke-dasharray="20 9"/>
+      <circle cx="135" cy="135" r="76" fill="none" stroke="#4fd1ff" stroke-opacity="0.8" stroke-width="1.5" stroke-dasharray="90 40"/>
+      <circle cx="135" cy="135" r="40" fill="#4fd1ff" fill-opacity="0.18"/>
+      <circle cx="135" cy="135" r="26" fill="#4fd1ff" fill-opacity="0.55"/>
+      <circle cx="135" cy="135" r="12" fill="#ffffff"/>
+    </svg></div>
+  <h1 style="text-align:center;font-size:34px;letter-spacing:.3em;margin:0">J.A.R.V.I.S.</h1>
+  <p class="sub" style="text-align:center;color:var(--muted);font-size:15px;margin:0 0 14px">Feature guide · everything Jarvis can do, and how to ask</p>
+  <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
+    <span class="chip">VOICE &amp; TELEGRAM</span><span class="chip">UPDATES ITSELF</span><span class="chip amber">NOVEMBER 2026</span>
+  </div>
+  <div class="grid3">
+    <div class="feat"><div class="k">Conversation</div><div class="d">Speaks while it thinks, takes follow-ups without the wake word.</div><div class="q">“And tomorrow?”</div></div>
+    <div class="feat"><div class="k">Briefing &amp; recap</div><div class="d">Morning briefing, evening recap, spoken and sent to your phone.</div><div class="q">Press BRIEFING</div></div>
+    <div class="feat"><div class="k">Reminders &amp; lists</div><div class="d">Reminders, timers, repeats, to-do and shopping lists.</div><div class="q">“Remind me at 9 to call the landlord.”</div></div>
+    <div class="feat"><div class="k">Weather &amp; time</div><div class="d">Forecasts anywhere, time in any city.</div><div class="q">“Weather in Montreal this weekend?”</div></div>
+    <div class="feat"><div class="k">Calendar</div><div class="d">Reads your calendar; new events open pre-filled for you to save.</div><div class="q">“What’s on Friday?”</div></div>
+    <div class="feat"><div class="k">Nudges</div><div class="d">Event heads-ups, rain warnings, evening recap.</div><div class="q">Automatic, 7 AM–10 PM</div></div>
+    <div class="feat"><div class="k">Screen &amp; clipboard</div><div class="d">Looks at your screen or what you copied, only when you ask.</div><div class="q">“What’s on my screen?”</div></div>
+    <div class="feat"><div class="k">Memory</div><div class="d">Remembers lasting facts; review or delete them any time.</div><div class="q">“What do you know about me?”</div></div>
+    <div class="feat"><div class="k">Think harder</div><div class="d">Much more thought for one tough question.</div><div class="q">“Think hard about this…”</div></div>
+    <div class="feat"><div class="k">Page viewer</div><div class="d">Web pages, videos and maps inside the Jarvis screen.</div><div class="q">“Show me the CBC news page.”</div></div>
+    <div class="feat"><div class="k">PC control</div><div class="d">Lock, sleep, shut down (with confirmation), folders, files.</div><div class="q">“Find my tax return.”</div></div>
+    <div class="feat"><div class="k">Protocols</div><div class="d">Your own routines, run with one command.</div><div class="q">“Work mode.”</div></div>
+    <div class="feat"><div class="k">Music &amp; volume</div><div class="d">Play, pause, skip, mute, set the volume.</div><div class="q">“Next song.” “Volume 30.”</div></div>
+    <div class="feat"><div class="k">Web reading</div><div class="d">Searches the web and reads pages you link.</div><div class="q">“Summarize this article: …”</div></div>
+    <div class="feat"><div class="k">Auto-update</div><div class="d">Updates itself every time it starts.</div><div class="q">Just start Jarvis</div></div>
+  </div>
+  <div class="callout info" style="margin-top:14px"><span class="t">HOW TO USE THIS GUIDE</span>The quotes are examples, not commands to memorize: talk normally. Jarvis works out what you mean. The same requests work by typing on the Jarvis screen or messaging your Telegram bot.</div>
+
+  <div class="foot"><span>FEATURE GUIDE · OVERVIEW</span><span>01</span></div>
+</section>
+<section class="page tight">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">01 · TALKING</span></div>
+
+  <span class="chip">01</span>
+  <h1 style="margin-top:10px">Talking to Jarvis</h1>
+  <p class="lead">Jarvis starts speaking as soon as its first sentence is ready, and keeps listening for your follow-up after it answers, so it feels like a conversation, not a walkie-talkie.</p>
+  <table class="table">
+    <tr><th>WAY TO TALK</th><th>HOW IT WORKS</th></tr>
+    <tr><td>Hold <span class="kbd">Space</span></td><td>Listens the whole time you hold it, even through long pauses. Sends when you let go. Best for long questions.</td></tr>
+    <tr><td>Click <b>MIC</b></td><td>Listens until you've been quiet for a moment, then sends. Click again to send immediately.</td></tr>
+    <tr><td><b>WAKE WORD</b> on</td><td>Always listening: start with “Jarvis…”. Background talk without “Jarvis” is ignored.</td></tr>
+    <tr><td><b>CONVERSATION</b> on</td><td>After a spoken answer, ask a follow-up without pressing anything. Say <span class="quote">“that's all”</span>, <span class="quote">“thanks Jarvis”</span> or stay quiet for 7 seconds to end it.</td></tr>
+    <tr><td>Type</td><td>Type in the box and press Enter. Replies still appear in the transcript, and are spoken if VOICE is on.</td></tr>
+    <tr><td>Telegram</td><td>Message your bot from anywhere. Same Jarvis, same memory. Send <span class="cmd">/reset</span> to start a fresh conversation.</td></tr>
+  </table>
+
+  <h2>Getting the timing right</h2>
+  <div class="grid2">
+    <div class="card"><h3>WAIT setting</h3><p>How long a pause means you've finished: 1.5, 2.5, 4 or 6 seconds. Jarvis also adapts: it answers sooner when your sentence sounds complete, and waits longer when you trail off (“and…”, “so…”, “um…”).</p></div>
+    <div class="card"><h3>Best voice</h3><p>Use the Edge window Jarvis opens. Edge has natural voices such as “Microsoft Ryan”. While Jarvis speaks it stops listening, so it doesn't hear itself.</p></div>
+  </div>
+
+  <h2>Think harder</h2>
+  <p>For a tough question (comparisons, planning, decisions), say <span class="quote">“think hard about…”</span>, <span class="quote">“take your time”</span> or <span class="quote">“step by step”</span>, or press <b>THINK HARDER</b> (it turns orange) before asking. It applies to that one question, gives a slower, more careful answer, and costs a few times more than a normal question.</p>
+
+  <div class="callout"><span class="t">INSTANT ACKNOWLEDGMENTS</span>When Jarvis needs a moment (weather, a web search, your calendar), it says so right away: “Checking the weather.” Silence followed by an answer is normal only for very quick replies.</div>
+
+  <div class="foot"><span>FEATURE GUIDE · 01 · TALKING</span><span>02</span></div>
+</section>
+<section class="page tight">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">02 · YOUR DAY</span></div>
+
+  <span class="chip">02</span>
+  <h1 style="margin-top:10px">Your day</h1>
+  <table class="table" style="margin-top:6px">
+    <tr><th>FEATURE</th><th>WHAT TO SAY / WHAT HAPPENS</th></tr>
+    <tr><td>Morning briefing</td><td>At 8:00 (or when you first open Jarvis that day): weather and what to wear, today's calendar, reminders and to-dos. Spoken, and sent to Telegram. Press <b>BRIEFING</b> any time.</td></tr>
+    <tr><td>Evening recap</td><td>At 9 PM: what's coming tomorrow and anything still open.</td></tr>
+    <tr><td>Reminders</td><td><span class="quote">“Remind me tomorrow at 9 to call the landlord.”</span> <span class="quote">“Remind me every weekday at 8 to take vitamins.”</span> Spoken on the PC and sent to your phone. Missed while Jarvis was off? It tells you when it starts, marked late.</td></tr>
+    <tr><td>Timers</td><td><span class="quote">“Set a 10-minute timer for the pasta.”</span></td></tr>
+    <tr><td>Manage reminders</td><td><span class="quote">“What reminders do I have?”</span> <span class="quote">“Cancel the landlord one.”</span></td></tr>
+    <tr><td>Lists</td><td><span class="quote">“Add milk to my shopping list.”</span> <span class="quote">“Read my to-do list.”</span> <span class="quote">“Remove number 2.”</span> <span class="quote">“Clear the shopping list.”</span></td></tr>
+    <tr><td>Weather &amp; time</td><td><span class="quote">“What's the weather?”</span> <span class="quote">“Will it rain in Ottawa tomorrow?”</span> <span class="quote">“What time is it in Tokyo?”</span></td></tr>
+    <tr><td>Nudges</td><td>Automatic, 7 AM–10 PM only: a heads-up 10 minutes before calendar events, and one warning a day when rain or snow is likely in the next few hours.</td></tr>
+  </table>
+
+  <h2>Calendar</h2>
+  <p><span class="quote">“What's on today?”</span> <span class="quote">“Am I free Friday afternoon?”</span> <span class="quote">“Add lunch with Maria Friday at 12:30.”</span> Adding opens a pre-filled event in your browser; check it and click <b>Save</b>. Jarvis can read your calendar but never changes it on its own.</p>
+  <div class="grid2">
+    <div class="card"><h3>Connect Google Calendar</h3><ul>
+      <li>calendar.google.com → ⚙ <b>Settings</b></li>
+      <li>Under <i>Settings for my calendars</i>, click your calendar</li>
+      <li><b>Integrate calendar</b> → copy <b>Secret address in iCal format</b></li>
+    </ul></div>
+    <div class="card"><h3>Connect Outlook.com</h3><ul>
+      <li>⚙ <b>Settings</b> → <b>Calendar</b> → <b>Shared calendars</b></li>
+      <li><b>Publish a calendar</b> → <i>Can view all details</i></li>
+      <li>Copy the <b>ICS</b> link</li>
+    </ul></div>
+  </div>
+  <div class="callout"><span class="t">THEN</span>In the Jarvis folder run <span class="cmd">.venv\Scripts\python -m jarvis.configure</span>, press Enter through the answers and paste the link at <b>Calendar iCal link</b> (Ctrl+V works). Treat that link like a password: never paste it into a chat.</div>
+
+  <div class="foot"><span>FEATURE GUIDE · 02 · YOUR DAY</span><span>03</span></div>
+</section>
+<section class="page tight">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">03 · ON YOUR PC</span></div>
+
+  <span class="chip">03</span>
+  <h1 style="margin-top:10px">On your PC</h1>
+  <table class="table" style="margin-top:6px">
+    <tr><th>FEATURE</th><th>WHAT TO SAY / WHAT HAPPENS</th></tr>
+    <tr><td>Your screen</td><td><span class="quote">“What's on my screen?”</span> <span class="quote">“Help me with this error.”</span> Jarvis hides itself for a second, takes a screenshot, and comes back.</td></tr>
+    <tr><td>Clipboard</td><td>Copy some text, then: <span class="quote">“Summarize what I copied.”</span> <span class="quote">“Fix the grammar in what I copied and put it back.”</span> Then paste with Ctrl+V.</td></tr>
+    <tr><td>Page viewer</td><td><span class="quote">“Show me the CBC news page.”</span> <span class="quote">“Pull up that YouTube video.”</span> <span class="quote">“Show me a map of the CN Tower.”</span> Opens inside Jarvis. Use the address box, <b>READER</b> (clean text), <b>BROWSER</b> or <b>CLOSE</b>. Login sites like Gmail open in your normal browser.</td></tr>
+    <tr><td>Music &amp; volume</td><td><span class="quote">“Pause the music.”</span> <span class="quote">“Next song.”</span> <span class="quote">“Mute.”</span> <span class="quote">“Volume to 30.”</span> Works with Spotify, YouTube and anything else playing.</td></tr>
+    <tr><td>Lock, sleep, power</td><td><span class="quote">“Lock the computer.”</span> <span class="quote">“Sleep in 30 minutes.”</span> <span class="quote">“Shut down.”</span> Jarvis asks first, and a shutdown always gives you at least a minute: say <span class="quote">“cancel”</span>.</td></tr>
+    <tr><td>Folders &amp; files</td><td><span class="quote">“Open my Downloads.”</span> <span class="quote">“Find my tax return and open it.”</span> Searches Desktop, Documents, Downloads, Pictures, Music and Videos.</td></tr>
+    <tr><td>Apps &amp; websites</td><td><span class="quote">“Open Spotify.”</span> (apps listed in <span class="cmd">config\apps.json</span>) <span class="quote">“Open YouTube in a tab.”</span></td></tr>
+  </table>
+
+  <h2>Protocols: your own routines</h2>
+  <p>Describe a routine once: <span class="quote">“Create a work mode protocol: say ‘Let's get to work’, open Gmail, play my music, set volume to 30 and read my to-do list.”</span> Jarvis reads the steps back and saves them when you agree. After that, just say <span class="quote">“Work mode.”</span> Also: <span class="quote">“What protocols do I have?”</span>, <span class="quote">“Delete movie night.”</span></p>
+  <p style="color:var(--muted);font-size:12px">A protocol can open websites and apps, control music and volume, read a list, check the weather, wait, and say something. Nothing more, so a routine can never do anything risky.</p>
+  <div class="callout info"><span class="t">SAFETY BUILT IN</span>Jarvis never opens programs or scripts (.exe, .bat, …) it finds, only documents, pictures and media in your own folders. The viewer only fetches public websites, never devices on your home network.</div>
+
+  <div class="foot"><span>FEATURE GUIDE · 03 · ON YOUR PC</span><span>04</span></div>
+</section>
+<section class="page tight">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">04 · MEMORY & PRIVACY</span></div>
+
+  <span class="chip">04</span>
+  <h1 style="margin-top:10px">Memory &amp; privacy</h1>
+  <p class="lead">Jarvis remembers in three ways, and you can see and clear every one of them.</p>
+  <table class="table">
+    <tr><th>WHAT</th><th>HOW IT WORKS</th></tr>
+    <tr><td>Facts about you</td><td>When you mention something lasting (<span class="quote">“My sister's name is Maria”</span>, an allergy, a routine), Jarvis saves it and says so. <span class="quote">“What do you know about me?”</span> <span class="quote">“Forget the allergy one.”</span> Or press <b>MEMORY</b> to see the list and click <b>FORGET</b>. It never saves passwords or card numbers.</td></tr>
+    <tr><td>Recent conversations</td><td>After a restart, Jarvis recalls your last dozen exchanges. <b>RESET</b> (or <span class="cmd">/reset</span> on Telegram) clears them.</td></tr>
+    <tr><td>Your stuff</td><td>Reminders, lists, protocols and settings stay on your laptop, in the Jarvis folder.</td></tr>
+  </table>
+
+  <h2>Where everything lives</h2>
+  <table class="table">
+    <tr><th>FILE (IN THE JARVIS FOLDER)</th><th>CONTAINS</th></tr>
+    <tr><td><span class="cmd">.env</span></td><td>Your settings and keys. Change them with the settings tool, never by sharing the file.</td></tr>
+    <tr><td><span class="cmd">data\memory.json</span></td><td>Facts about you</td></tr>
+    <tr><td><span class="cmd">data\transcript.jsonl</span></td><td>Text of recent conversations (delete to wipe)</td></tr>
+    <tr><td><span class="cmd">data\reminders.json</span>, <span class="cmd">lists.json</span>, <span class="cmd">protocols.json</span></td><td>Your reminders, lists and routines</td></tr>
+  </table>
+
+  <h2>Privacy rules Jarvis follows</h2>
+  <div class="grid2">
+    <div class="card"><ul>
+      <li>Looks at your screen or clipboard <b>only when you ask</b> in that message</li>
+      <li>Only you can use your Telegram bot</li>
+      <li>The Jarvis screen only works on your laptop</li>
+    </ul></div>
+    <div class="card"><ul>
+      <li>Your words, screenshots and copied text go to Claude to be answered; nothing else is shared</li>
+      <li>Speech-to-text runs through your browser's (Microsoft's or Google's) speech service</li>
+    </ul></div>
+  </div>
+
+  <div class="foot"><span>FEATURE GUIDE · 04 · MEMORY & PRIVACY</span><span>05</span></div>
+</section>
+<section class="page tight">
+  <div class="topbar"><span class="brand">J.A.R.V.I.S.</span><span class="crumb">REFERENCE</span></div>
+
+  <span class="chip amber">REFERENCE</span>
+  <h1 style="margin-top:10px">Controls, settings &amp; help</h1>
+  <h2>On-screen controls</h2>
+  <table class="table">
+    <tr><th>CONTROL</th><th>DOES</th></tr>
+    <tr><td><b>MIC</b> · <span class="kbd">Space</span></td><td>Talk (see page 2)</td></tr>
+    <tr><td><b>WAKE WORD</b> · <b>VOICE</b> · <b>CONVERSATION</b></td><td>Always listen for “Jarvis” · speak replies aloud · listen for follow-ups</td></tr>
+    <tr><td><b>WAIT</b></td><td>How long a pause ends your question</td></tr>
+    <tr><td><b>THINK HARDER</b> · <b>MEMORY</b> · <b>BRIEFING</b></td><td>More thought for the next question · what Jarvis remembers · today's briefing now</td></tr>
+    <tr><td><b>RESET</b></td><td>Start a fresh conversation</td></tr>
+    <tr><td>Left panels</td><td>System, connections, weather, today's calendar, upcoming reminders, to-do list, activity</td></tr>
+  </table>
+
+  <h2>Changing settings</h2>
+  <p>In the Jarvis folder: click the address bar, type <span class="cmd">cmd</span>, press Enter, then run <span class="cmd">.venv\Scripts\python -m jarvis.configure</span>. Press Enter to keep an answer, type <span class="cmd">-</span> to clear one. It covers your key, model, name, city, units, briefing and recap times, Telegram and calendar.</p>
+  <p style="color:var(--muted);font-size:12px">Extra options in <span class="cmd">.env</span>: <span class="cmd">NUDGES=false</span> (no nudges) · <span class="cmd">HUD_FULLSCREEN=true</span> · <span class="cmd">AUTO_UPDATE=false</span></p>
+
+  <h2>Updates &amp; help</h2>
+  <table class="table">
+    <tr><th>SITUATION</th><th>DO THIS</th></tr>
+    <tr><td>Getting new features</td><td>Nothing: <b>start-jarvis.bat</b> updates Jarvis every time it starts. It asks only about new settings.</td></tr>
+    <tr><td>Something isn't working</td><td>Double-click <b>checkup.bat</b>. It checks your key, Telegram, phone and Claude connection, and is safe to photograph and share.</td></tr>
+    <tr><td>Jarvis says an error on screen</td><td>It explains the cause in plain words. If not, send a photo of the black Jarvis window and the checkup report.</td></tr>
+    <tr><td>Windows-only features don't respond</td><td>Screen, clipboard, PC control and media keys need Jarvis running on your Windows laptop.</td></tr>
+  </table>
+  <div class="callout"><span class="t">KEEP THE BLACK WINDOW OPEN</span>That window is Jarvis. Minimize it, but closing it shuts Jarvis down, including reminders and nudges.</div>
+
+  <div class="foot"><span>FEATURE GUIDE · REFERENCE</span><span>06</span></div>
+</section>
+</body>
+</html>
