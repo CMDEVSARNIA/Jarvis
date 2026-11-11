@@ -16,11 +16,8 @@ from typing import Any, Awaitable, Callable
 import httpx
 import psutil
 
-from . import events, media, protocols, reminders, viewer, weather
+from . import calendar_feed, events, media, memory, pc, protocols, reminders, viewer, vision, weather
 from .config import DATA_DIR, settings
-
-MEMORY_FILE = DATA_DIR / "memory.json"
-
 
 def _schema(props: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -201,10 +198,95 @@ TOOLS: list[dict[str, Any]] = [
     {
         "name": "remember",
         "description": (
-            "Save a durable fact about the owner (preferences, people, routines) so it is "
-            "available in future conversations. Use sparingly, for things worth keeping."
-        ),
-        "input_schema": _schema({"fact": {"type": "string"}}),
+            "Save a lasting fact about the owner (people, preferences, routines, health needs, "
+            "important dates) for future conversations. Use it on your own when they mention "
+            "something worth knowing later, and say briefly that you'll remember it. Not for "
+            "passing details, secrets or passwords."),
+        "input_schema": _schema({"fact": {"type": "string",
+                                          "description": "One short third-person fact, e.g. 'Sister is Maria'"}}),
+        "strict": True,
+    },
+    {
+        "name": "recall_memory",
+        "description": "List everything saved about the owner, numbered.",
+        "input_schema": _schema({}),
+        "strict": True,
+    },
+    {
+        "name": "forget",
+        "description": "Forget a saved fact by its number, by matching text, or 'all'.",
+        "input_schema": _schema({"item": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "look_at_screen",
+        "description": (
+            "Take a screenshot of the owner's screen (Jarvis hides itself for a moment) to see "
+            "what they're looking at. ONLY when they explicitly ask about their screen."),
+        "input_schema": _schema({}),
+        "strict": True,
+    },
+    {
+        "name": "read_clipboard",
+        "description": "Read the text the owner copied. ONLY when they refer to what they copied.",
+        "input_schema": _schema({}),
+        "strict": True,
+    },
+    {
+        "name": "copy_to_clipboard",
+        "description": "Put text on the clipboard (e.g. a rewritten version) so the owner can paste it.",
+        "input_schema": _schema({"text": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "get_calendar",
+        "description": "Events from the owner's calendar. Empty start_date = today.",
+        "input_schema": _schema({"start_date": {"type": "string", "description": "YYYY-MM-DD or empty"},
+                                 "days": {"type": "integer", "description": "1-31"}}),
+        "strict": True,
+    },
+    {
+        "name": "add_calendar_event",
+        "description": (
+            "Open a pre-filled event in the owner's calendar for them to Save (Jarvis can't save "
+            "it itself). Work out exact local times from the message tag."),
+        "input_schema": _schema({
+            "title": {"type": "string"},
+            "start": {"type": "string", "description": "Local ISO time, e.g. 2026-11-13T15:00"},
+            "end": {"type": "string", "description": "Local ISO time, or empty for one hour"},
+            "location": {"type": "string"},
+        }),
+        "strict": True,
+    },
+    {
+        "name": "pc_action",
+        "description": (
+            "Lock, sleep, shut down or restart the PC, or cancel a scheduled one. For sleep, "
+            "shutdown and restart, ask the owner to confirm first and pass confirmed=true only "
+            "after they say yes. Shutdown/restart always give at least a minute to cancel."),
+        "input_schema": _schema({
+            "action": {"type": "string", "enum": ["lock", "sleep", "shutdown", "restart", "cancel"]},
+            "delay_minutes": {"type": "number", "description": "0 for now"},
+            "confirmed": {"type": "boolean"},
+        }),
+        "strict": True,
+    },
+    {
+        "name": "open_folder",
+        "description": "Open one of the owner's folders in File Explorer.",
+        "input_schema": _schema({"folder": {"type": "string", "enum": list(pc.FOLDERS)}}),
+        "strict": True,
+    },
+    {
+        "name": "find_files",
+        "description": "Find files by name in Desktop, Documents, Downloads, Pictures, Music, Videos (newest first).",
+        "input_schema": _schema({"query": {"type": "string", "description": "Words from the file name"}}),
+        "strict": True,
+    },
+    {
+        "name": "open_file",
+        "description": "Open a file found with find_files (documents, images, media; never programs).",
+        "input_schema": _schema({"path": {"type": "string"}}),
         "strict": True,
     },
     {
@@ -299,16 +381,7 @@ async def launch_app(name: str) -> str:
 
 
 def load_memory() -> list[str]:
-    if MEMORY_FILE.exists():
-        return json.loads(MEMORY_FILE.read_text())
-    return []
-
-
-async def remember(fact: str) -> str:
-    facts = load_memory()
-    facts.append(fact)
-    MEMORY_FILE.write_text(json.dumps(facts, indent=2))
-    return "Saved."
+    return memory.load()
 
 
 async def message_owner(text: str) -> str:
@@ -376,14 +449,26 @@ HANDLERS: dict[str, Callable[..., Awaitable[str]]] = {
     "system_status": system_status,
     "open_website": open_website,
     "launch_app": launch_app,
-    "remember": remember,
+    "remember": memory.remember,
+    "recall_memory": memory.recall_memory,
+    "forget": memory.forget,
+    "look_at_screen": vision.look_at_screen,
+    "read_clipboard": vision.read_clipboard,
+    "copy_to_clipboard": vision.write_clipboard,
+    "get_calendar": calendar_feed.get_calendar,
+    "add_calendar_event": calendar_feed.add_calendar_event,
+    "pc_action": pc.pc_action,
+    "open_folder": pc.open_folder,
+    "find_files": pc.find_files,
+    "open_file": pc.open_file,
     "message_owner": message_owner,
     "call_owner": call_owner,
 }
 
 
-async def run_tool(name: str, args: dict[str, Any]) -> tuple[str, bool]:
-    """Returns (result_text, is_error)."""
+async def run_tool(name: str, args: dict[str, Any]) -> tuple[Any, bool]:
+    """Returns (result, is_error). result is text, or a list of content blocks
+    (e.g. a screenshot) that goes straight into the tool_result."""
     handler = HANDLERS.get(name)
     if handler is None:
         return f"Unknown tool {name}", True

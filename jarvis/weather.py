@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -109,6 +109,35 @@ async def _get_weather(location: str) -> str:
         ],
     }
     return json.dumps(report)
+
+
+SNOW_CODES = {71, 73, 75, 77, 85, 86}
+
+
+async def precipitation_soon(hours: int = 4):
+    """(local datetime, chance %, 'rain'|'snow') of the likeliest wet hour in the next
+    few hours at home, or (None, 0, '') if nothing likely or on error."""
+    try:
+        place = await find_place(settings.home_location)
+        if not place:
+            return None, 0, ""
+        params = {"latitude": place["latitude"], "longitude": place["longitude"], "timezone": "auto",
+                  "current": "weather_code", "hourly": "precipitation_probability,weather_code",
+                  "forecast_days": 2}
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(FORECAST, params=params)
+            r.raise_for_status()
+            data = r.json()
+    except (httpx.HTTPError, ValueError, KeyError):
+        return None, 0, ""
+    now = datetime.fromisoformat(data["current"]["time"])
+    best = (None, 0, "")
+    h = data["hourly"]
+    for t, chance, code in zip(h["time"], h["precipitation_probability"], h["weather_code"]):
+        when = datetime.fromisoformat(t)
+        if now < when <= now + timedelta(hours=hours) and (chance or 0) > best[1]:
+            best = (when, int(chance), "snow" if code in SNOW_CODES else "rain")
+    return best
 
 
 async def current_summary() -> str:

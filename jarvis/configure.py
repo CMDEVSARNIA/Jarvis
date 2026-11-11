@@ -145,6 +145,8 @@ MISSING_ORDER = [
     ("UNITS", "Units: metric or imperial", False, "metric"),
     ("BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", False, "08:00"),
     ("TELEGRAM_BOT_TOKEN", "Telegram bot token from @BotFather (hidden; blank to skip)", True, ""),
+    ("RECAP_TIME", "Evening recap time, 24h HH:MM (- to turn off)", False, "21:00"),
+    ("CALENDAR_ICS_URL", "Calendar's secret iCal link (hidden; blank to skip)", True, ""),
 ]
 
 
@@ -207,6 +209,10 @@ def main() -> None:
     ask(cur, "HOME_LOCATION", "Your city, for weather (e.g. Toronto, Canada)")
     ask(cur, "UNITS", "Units: metric or imperial", default="metric")
     ask(cur, "BRIEFING_TIME", "Daily briefing time, 24h HH:MM (- to turn off)", default="08:00")
+    ask(cur, "RECAP_TIME", "Evening recap time, 24h HH:MM (- to turn off)", default="21:00")
+    print("Calendar: paste your calendar's secret iCal link (Google: Settings > your calendar >")
+    print("  'Secret address in iCal format'). Leave blank to skip.")
+    ask(cur, "CALENDAR_ICS_URL", "Calendar iCal link (hidden)", secret=True)
 
     section("Telegram (phone chat)")
     ask(cur, "TELEGRAM_BOT_TOKEN", "Bot token from @BotFather (hidden)", secret=True)

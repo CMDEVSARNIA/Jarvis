@@ -172,7 +172,7 @@
   const idleCallbacks = [];
   function cleanForSpeech(t) {
     return t.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/https?:\/\/\S+/g, "the link")
-            .replace(/[*_#`>]+/g, "").replace(/\s+/g, " ").trim();
+            .replace(/[*#`>]+/g, "").replace(/(^|\s)_+|_+(\s|$)/g, "$1$2").replace(/\s+/g, " ").trim();
   }
   function enqueueSpeech(text) {
     text = cleanForSpeech(text);
@@ -414,6 +414,9 @@
       case "activity":
         addActivity(`<b>${esc(ev.label)}</b> ${esc(ev.text)}`);
         break;
+      case "memory":
+        renderMemory(ev.facts || []);
+        break;
       case "viewer":
         showViewer(ev);
         break;
@@ -441,6 +444,8 @@
     $("dash-weather").textContent = d.weather || "--";
     fillList("dash-upcoming", d.upcoming, "No reminders");
     fillList("dash-todo", d.todo, "Nothing on the list");
+    fillList("dash-today", d.today, "Nothing scheduled");
+    if (d.memory && JSON.stringify(d.memory) !== JSON.stringify(memoryFacts)) renderMemory(d.memory);
   }
 
   // ------------------------------------------------------ streamed turns --
@@ -449,6 +454,8 @@
     get_weather: "Checking the weather.", web_search: "Let me look that up.",
     web_fetch: "Reading the page.", show_on_screen: "Pulling that up.",
     show_map: "Bringing up the map.", run_protocol: "Running it now.", system_status: "One moment.",
+    look_at_screen: "Let me have a look.", get_calendar: "Checking your calendar.",
+    read_clipboard: "Let me see what you copied.", find_files: "Searching your files.",
   };
   function turnOf(ev) { return turns[ev.turn] || (turns[ev.turn] = { buf: "", text: "", spoke: false, el: null }); }
   function onPartial(ev) {
@@ -511,13 +518,49 @@
   $("viewer-reader").addEventListener("click", () => requestView(viewerUrl, true));
   $("viewer-close").addEventListener("click", () => showViewer({ mode: "close" }));
 
+  // ------------------------------------------------------- memory panel --
+  let memoryFacts = [];
+  function renderMemory(facts) {
+    memoryFacts = facts.slice();
+    const ul = $("memory-list");
+    ul.replaceChildren();
+    if (!facts.length) {
+      const li = document.createElement("li");
+      li.className = "empty"; li.textContent = "Nothing saved yet. Mention things like your birthday, family or preferences.";
+      ul.append(li); return;
+    }
+    facts.forEach((fact, i) => {
+      const li = document.createElement("li");
+      const span = document.createElement("span"); span.textContent = fact;
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "vbtn"; btn.textContent = "FORGET";
+      btn.setAttribute("aria-label", "Forget: " + fact);
+      btn.addEventListener("click", () => {
+        if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: "forget", text: String(i + 1) }));
+        li.remove();
+      });
+      li.append(span, btn); ul.append(li);
+    });
+  }
+  $("memory-btn").addEventListener("click", () => { $("memory-modal").hidden = false; $("memory-close").focus(); });
+  $("memory-close").addEventListener("click", () => { $("memory-modal").hidden = true; });
+  $("memory-modal").addEventListener("click", (e) => { if (e.target.id === "memory-modal") $("memory-modal").hidden = true; });
+
+  // "Think harder" applies to the next question only.
+  let deepNext = false;
+  $("think").addEventListener("click", () => {
+    deepNext = !deepNext;
+    $("think").setAttribute("aria-pressed", String(deepNext));
+  });
+
   function send(text, viaVoice = false) {
     if (!text || !socket || socket.readyState !== 1) return;
     lastInputVoice = viaVoice;
     addMsg("user", text, "hud");
     $("caption").textContent = "";
     setState("thinking", false);
-    socket.send(JSON.stringify({ type: "chat", text }));
+    socket.send(JSON.stringify({ type: "chat", text, deep: deepNext }));
+    if (deepNext) { deepNext = false; $("think").setAttribute("aria-pressed", "false"); }
   }
 
   $("chat-form").addEventListener("submit", (e) => {

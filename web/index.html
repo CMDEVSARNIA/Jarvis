@@ -31,6 +31,9 @@
       <h2>WEATHER</h2>
       <p class="dash" id="dash-weather">--</p>
 
+      <h2>TODAY</h2>
+      <ul class="dashlist" id="dash-today"><li class="empty">No calendar connected</li></ul>
+
       <h2>UPCOMING</h2>
       <ul class="dashlist" id="dash-upcoming"><li class="empty">No reminders</li></ul>
 
@@ -87,10 +90,23 @@
         <option value="6000">6s</option>
       </select>
     </label>
+    <button id="think" class="pill" aria-pressed="false" title="Give the next question much more thought">THINK HARDER</button>
+    <button id="memory-btn" class="pill" title="What Jarvis remembers about you">MEMORY</button>
     <button id="briefing" class="pill" title="Hear today's briefing">BRIEFING</button>
     <button id="call-me" class="pill" title="Have Jarvis ring your phone">CALL MY PHONE</button>
     <button id="reset" class="pill ghost" title="Clear conversation">RESET</button>
   </footer>
+
+  <div class="modal" id="memory-modal" hidden role="dialog" aria-modal="true" aria-labelledby="memory-title">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="memory-title">WHAT JARVIS REMEMBERS</h2>
+        <button type="button" class="vbtn" id="memory-close">CLOSE</button>
+      </div>
+      <p class="modal-note">Jarvis saves lasting facts you mention. Remove anything you don't want kept.</p>
+      <ul class="memlist" id="memory-list"></ul>
+    </div>
+  </div>
 
   <div class="locked" id="locked" hidden>
     <p>Access token missing or invalid.</p>

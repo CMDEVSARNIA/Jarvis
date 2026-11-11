@@ -13,7 +13,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-from . import reminders, weather
+from . import calendar_feed, memory, reminders, weather
 from .config import DATA_DIR, local_now, settings
 
 log = logging.getLogger("jarvis.briefing")
@@ -21,7 +21,7 @@ STATE_FILE = DATA_DIR / "state.json"
 
 _lock = asyncio.Lock()
 _greeted = False
-dashboard: dict = {"weather": "", "upcoming": [], "todo": []}
+dashboard: dict = {"weather": "", "upcoming": [], "todo": [], "today": [], "memory": []}
 
 
 def _state() -> dict:
@@ -48,6 +48,7 @@ async def _gather() -> dict:
     except Exception as exc:
         data["weather"] = f"unavailable ({type(exc).__name__})"
     data["reminders_today"] = reminders.upcoming(limit=10, before=now.replace(hour=23, minute=59))
+    data["calendar_today"] = await calendar_feed.today_summary()
     lists = reminders.all_lists()
     data["to_do"] = lists.get("to-do") or lists.get("todo") or []
     data["other_lists"] = {k: len(v) for k, v in lists.items() if k not in ("to-do", "todo") and v}
@@ -119,6 +120,8 @@ async def run() -> None:
             dashboard["upcoming"] = reminders.upcoming(limit=3)
             lists = reminders.all_lists()
             dashboard["todo"] = (lists.get("to-do") or lists.get("todo") or [])[:5]
+            dashboard["today"] = (await calendar_feed.today_summary())[:5]
+            dashboard["memory"] = memory.load()
         except Exception:
             log.exception("Briefing loop error")
         await asyncio.sleep(30)

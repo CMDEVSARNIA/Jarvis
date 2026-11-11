@@ -34,6 +34,13 @@ sentence while Claude is still writing, a short acknowledgment plays while tools
 a spoken answer Jarvis listens for a follow-up without the wake word (say "that's all" to end).
 It waits longer when you trail off ("so I was thinking...") and less when a question sounds done.
 
+Smarter extras: it can look at your screen or read what you copied (only when you ask), keeps
+a memory of lasting facts you can review in the MEMORY panel, puts more thought into a question
+when you say "think hard" or press THINK HARDER, reads your calendar from its private iCal link
+(new events open pre-filled for you to save), gives nudges (event heads-ups, rain warnings,
+evening recap), and handles PC actions (lock, sleep, shutdown with confirmation, folders,
+finding and opening your files, never programs).
+
 Jarvis also greets you when the HUD opens, gives a daily briefing (weather, reminders, to-dos)
 at `BRIEFING_TIME` on the PC and Telegram, shows live weather/reminder/to-do panels, and
 remembers your recent conversations across restarts (`data/transcript.jsonl`).

@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import briefing, events, phone, reminders, telegram_bot, viewer
+from . import briefing, events, memory, nudges, phone, reminders, telegram_bot, viewer
 from .brain import brain
 from .config import WEB_DIR, settings
 
@@ -24,7 +24,8 @@ log = logging.getLogger("jarvis.server")
 async def lifespan(app: FastAPI):
     tasks = [asyncio.create_task(telegram_bot.run()),
              asyncio.create_task(reminders.run_scheduler()),
-             asyncio.create_task(briefing.run())]
+             asyncio.create_task(briefing.run()),
+             asyncio.create_task(nudges.run())]
     yield
     for task in tasks:
         task.cancel()
@@ -115,9 +116,12 @@ async def ws(socket: WebSocket) -> None:
             text = str(msg.get("text", "")).strip()
             if kind == "chat" and text:
                 # Run in the background so the socket keeps streaming events.
-                asyncio.create_task(brain.ask(text, channel="hud"))
+                asyncio.create_task(brain.ask(text, channel="hud", deep=bool(msg.get("deep"))))
             elif kind == "view" and text:
                 asyncio.create_task(_view(text, bool(msg.get("reader"))))
+            elif kind == "forget" and text:
+                await memory.forget(text)
+                briefing.dashboard["memory"] = memory.load()
             elif kind == "briefing":
                 asyncio.create_task(_briefing_now())
             elif kind == "reset":

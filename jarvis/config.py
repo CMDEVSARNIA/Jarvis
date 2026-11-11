@@ -51,7 +51,10 @@ class Settings:
     home_location: str = _env("HOME_LOCATION")          # e.g. "Toronto, Canada"
     units: str = _env("UNITS", "metric").lower()        # metric | imperial
     timezone: str = _env("JARVIS_TIMEZONE")
-    briefing_time: str = _env("BRIEFING_TIME", "08:00")  # HH:MM daily; blank = only on startup             # e.g. America/Toronto; blank = this computer's
+    briefing_time: str = _env("BRIEFING_TIME", "08:00")  # HH:MM daily; blank = only on startup
+    recap_time: str = _env("RECAP_TIME", "21:00")        # evening recap; blank = off
+    nudges: bool = _env("NUDGES", "true").lower() != "false"
+    calendar_url: str = _env("CALENDAR_ICS_URL")         # private iCal link (a secret)             # e.g. America/Toronto; blank = this computer's
     # Needed only for a personal/service-account key that isn't scoped to one workspace.
     workspace_id: str = _env("ANTHROPIC_WORKSPACE_ID")
 

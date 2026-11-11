@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from typing import Any
@@ -34,10 +35,19 @@ you how your reply will be delivered:
   need a tool, a brief "One moment." style line before it is fine; don't narrate the steps.
 - "telegram": your reply is a text message. Brief, plain text, light formatting at most.
 - "briefing": the owner asked for their daily briefing; it is SPOKEN aloud. Greet them by
-  time of day, then cover weather (and what to wear or bring), today's reminders and to-dos
+  time of day, then cover weather (and what to wear or bring), today's calendar, reminders and to-dos
   in four to six natural sentences. No lists, no markdown. Skip anything empty.
 
 When a protocol runs, speak any "say:" lines from its result as part of your reply.
+
+Memory: when the owner mentions a lasting personal fact (people, preferences, routines,
+health, important dates), save it with remember and mention it in a few words. Never save
+passwords, card numbers or other secrets.
+
+Privacy: only look at the screen or clipboard when the owner asks about them in that message.
+
+Calendar: use get_calendar for "what's on" questions. Adding an event opens it for the owner
+to Save; tell them so.
 
 You can act on the PC and reach the owner by phone through your tools. Use get_weather for
 weather rather than web search. To read a web page yourself, use web_fetch on its URL; to SHOW one to the owner, use
@@ -50,6 +60,12 @@ irreversible. You cannot place calls to anyone except the owner. If a tool fails
 MAX_HISTORY_CHARS = 300_000
 
 REFUSAL_REPLY = "I'm afraid I can't help with that one."
+
+# "Think harder": these phrases (or the HUD's THINK HARDER button) give one request
+# much more reasoning effort. Changing effort costs a cache refresh, so it's opt-in.
+DEEP_RE = re.compile(r"\b(think (really |very )?(hard|harder|carefully|deeply|it through)|"
+                     r"take your time|deep dive|in depth|step by step)\b", re.I)
+DEEP_EFFORT = "high"
 
 # A plain-text log of exchanges, so Jarvis remembers recent conversations after a
 # restart (only the words, never tool data or keys).
@@ -66,7 +82,7 @@ class Brain:
         self._carryover = ""  # summary of a previous, folded conversation
 
     # ----------------------------------------------------------------- api --
-    async def ask(self, text: str, channel: str) -> str:
+    async def ask(self, text: str, channel: str, deep: bool = False) -> str:
         """Send one user utterance through Claude (running tools as needed)
         and return the final reply text."""
         async with self.lock:
@@ -80,6 +96,9 @@ class Brain:
             self.messages.append({"role": "user", "content": content})
 
             turn = uuid.uuid4().hex[:8]
+            self._deep = deep or bool(DEEP_RE.search(text))
+            if self._deep:
+                events.publish({"type": "activity", "label": "THINKING", "text": "harder on this one"})
             events.publish({"type": "user", "channel": channel, "text": text, "turn": turn})
             events.publish({"type": "state", "state": "thinking"})
             try:
@@ -182,13 +201,14 @@ class Brain:
         """Like _create, but streams, so text can be spoken while it's still being
         written. Tool inputs are NOT streamed eagerly: they're tiny here, and leaving
         that off keeps the API's strict schema validation of them."""
+        deep = getattr(self, "_deep", False)
         async with self.client.beta.messages.stream(
             model=settings.model,
-            max_tokens=16000,
+            max_tokens=48000 if deep else 16000,
             system=SYSTEM_PROMPT,
             tools=TOOLS,
             messages=messages,
-            output_config={"effort": settings.effort},
+            output_config={"effort": DEEP_EFFORT if deep else settings.effort},
             cache_control={"type": "ephemeral"},
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
