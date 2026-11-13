@@ -148,6 +148,10 @@ MISSING_ORDER = [
     ("RECAP_TIME", "Evening recap time, 24h HH:MM (- to turn off)", False, "21:00"),
     ("START_WITH_WINDOWS", "Start Huxley automatically when Windows starts? (yes/no)", False, "no"),
     ("CALENDAR_ICS_URL", "Calendar's secret iCal link (hidden; blank to skip)", True, ""),
+    ("BORDER_CROSSING", "Border crossing you use, for wait times (- for none)", False, "Blue Water Bridge"),
+    ("COMMUTE_TO", "Usual drive destination for the morning commute (blank to skip)", False, ""),
+    ("TOMTOM_API_KEY", "Free TomTom key for drive times, from developer.tomtom.com (hidden; blank to skip)",
+     True, ""),
 ]
 
 
@@ -232,6 +236,14 @@ def main() -> None:
     print("Calendar: paste your calendar's secret iCal link (Google: Settings > your calendar >")
     print("  'Secret address in iCal format'). Leave blank to skip.")
     ask(cur, "CALENDAR_ICS_URL", "Calendar iCal link (hidden)", secret=True)
+
+    section("Travel")
+    ask(cur, "BORDER_CROSSING", "Border crossing you use, for wait times (- for none)", default="Blue Water Bridge")
+    ask(cur, "COMMUTE_TO", "Usual drive destination for the morning commute (blank to skip)")
+    print("Drive times with live traffic need a free TomTom key: developer.tomtom.com > Register >")
+    print("  Dashboard > Keys (copy the default key). Border waits work without it.")
+    ask(cur, "TOMTOM_API_KEY", "TomTom key (hidden; blank to skip)", secret=True)
+    print("Google (calendar, Gmail, Docs): double-click connect-google.bat after setup.")
 
     section("Telegram (phone chat)")
     ask(cur, "TELEGRAM_BOT_TOKEN", "Bot token from @BotFather (hidden)", secret=True)

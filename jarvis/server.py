@@ -13,7 +13,8 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import briefing, events, memory, nudges, phone, reminders, tailnet, telegram_bot, viewer
+from . import (briefing, events, google_auth, memory, nudges, phone, reminders, tailnet, telegram_bot,
+               viewer)
 from .brain import brain
 from .config import WEB_DIR, settings
 
@@ -135,6 +136,7 @@ def _status() -> dict:
         "telegram": telegram_bot.status[0],
         "telegram_status": telegram_bot.status[1],
         "phone": settings.phone_enabled,
+        "google": google_auth.connected(),
         "model": settings.model,
         "dashboard": briefing.dashboard,
     }

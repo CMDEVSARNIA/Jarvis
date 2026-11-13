@@ -16,7 +16,8 @@ from typing import Any, Awaitable, Callable
 import httpx
 import psutil
 
-from . import calendar_feed, events, media, memory, pc, protocols, reminders, viewer, vision, weather
+from . import (calendar_feed, events, google_tools, media, memory, pc, protocols, reminders, traffic,
+               viewer, vision, weather)
 from .config import DATA_DIR, settings
 
 def _schema(props: dict[str, Any]) -> dict[str, Any]:
@@ -248,14 +249,88 @@ TOOLS: list[dict[str, Any]] = [
     {
         "name": "add_calendar_event",
         "description": (
-            "Open a pre-filled event in the owner's calendar for them to Save (Huxley can't save "
-            "it itself). Work out exact local times from the message tag."),
+            "Add an event to the owner's calendar. With Google connected it's saved directly; "
+            "otherwise a pre-filled event opens for the owner to Save (the result says which). "
+            "Work out exact local times from the message tag."),
         "input_schema": _schema({
             "title": {"type": "string"},
             "start": {"type": "string", "description": "Local ISO time, e.g. 2026-11-13T15:00"},
             "end": {"type": "string", "description": "Local ISO time, or empty for one hour"},
             "location": {"type": "string"},
         }),
+        "strict": True,
+    },
+    {
+        "name": "change_calendar_event",
+        "description": ("Change an event (Google calendar only). Get event_id from get_calendar. "
+                        "Empty fields stay as they are; moving keeps the length unless end is given. "
+                        "Confirm with the owner first."),
+        "input_schema": _schema({
+            "event_id": {"type": "string"},
+            "title": {"type": "string"},
+            "start": {"type": "string", "description": "Local ISO time, or empty"},
+            "end": {"type": "string", "description": "Local ISO time, or empty"},
+            "location": {"type": "string"},
+        }),
+        "strict": True,
+    },
+    {
+        "name": "delete_calendar_event",
+        "description": "Delete an event (Google calendar only; id from get_calendar). Confirm with the owner first.",
+        "input_schema": _schema({"event_id": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "border_wait",
+        "description": ("Live Canada-US border wait times, both directions, for cars and NEXUS. "
+                        "Empty crossing = the owner's usual crossing."),
+        "input_schema": _schema({"crossing": {"type": "string",
+                                              "description": "e.g. Blue Water Bridge, Ambassador Bridge, or empty"}}),
+        "strict": True,
+    },
+    {
+        "name": "drive_time",
+        "description": ("Driving time with live traffic. Empty origin = home; empty destination = "
+                        "the owner's usual commute. Doesn't include border waits."),
+        "input_schema": _schema({"destination": {"type": "string"}, "origin": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "check_email",
+        "description": ("List the owner's Gmail messages matching a Gmail search (e.g. 'is:unread', "
+                        "'from:amazon newer_than:7d'). Empty query = inbox, last 2 days."),
+        "input_schema": _schema({"query": {"type": "string"},
+                                 "max_results": {"type": "integer", "description": "1-25"}}),
+        "strict": True,
+    },
+    {
+        "name": "read_email",
+        "description": "Read one email in full (message_id from check_email).",
+        "input_schema": _schema({"message_id": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "draft_email",
+        "description": ("Save an email DRAFT in the owner's Gmail (it is never sent; the owner "
+                        "sends it). For a reply, pass reply_to_id and leave to/subject empty."),
+        "input_schema": _schema({
+            "to": {"type": "string"},
+            "subject": {"type": "string"},
+            "body": {"type": "string", "description": "Plain text, signed as the owner would"},
+            "reply_to_id": {"type": "string", "description": "message_id being answered, or empty"},
+        }),
+        "strict": True,
+    },
+    {
+        "name": "search_docs",
+        "description": "Search the owner's Google Drive (Docs, Sheets, Slides, text) for words.",
+        "input_schema": _schema({"query": {"type": "string"}}),
+        "strict": True,
+    },
+    {
+        "name": "read_doc",
+        "description": "Read a Google Doc/Sheet/Slides file as text (file_id from search_docs).",
+        "input_schema": _schema({"file_id": {"type": "string"}}),
         "strict": True,
     },
     {
@@ -457,6 +532,15 @@ HANDLERS: dict[str, Callable[..., Awaitable[str]]] = {
     "copy_to_clipboard": vision.write_clipboard,
     "get_calendar": calendar_feed.get_calendar,
     "add_calendar_event": calendar_feed.add_calendar_event,
+    "change_calendar_event": google_tools.change_calendar_event,
+    "delete_calendar_event": google_tools.delete_calendar_event,
+    "border_wait": traffic.border_wait,
+    "drive_time": traffic.drive_time,
+    "check_email": google_tools.check_email,
+    "read_email": google_tools.read_email,
+    "draft_email": google_tools.draft_email,
+    "search_docs": google_tools.search_docs,
+    "read_doc": google_tools.read_doc,
     "pc_action": pc.pc_action,
     "open_folder": pc.open_folder,
     "find_files": pc.find_files,

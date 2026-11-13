@@ -248,20 +248,44 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   // ---------------------------------------------------------------- voice --
+  // Huxley's voice: male and British-leaning first, or the one picked in VOX (saved per
+  // device). Phones name voices differently: Android's Google voices have ids like
+  // en-gb-x-rjs-local (rjs, gbd and gbb are the male ones).
   let voice = null;
+  const MALE = [/Ryan.*Natural/i, /Thomas.*Natural/i, /Google UK English Male/i, /en-gb-x-(rjs|gbd|gbb)/i,
+                /\bDaniel\b/i, /\bArthur\b/i, /\bGeorge\b/i, /\bOliver\b/i, /\bmale\b/i,
+                /Guy.*Natural/i, /Andrew.*Natural/i, /en-us-x-(iom|iol|tpd)/i, /\bDavid\b/i];
+  const englishVoices = () => ("speechSynthesis" in window ? speechSynthesis.getVoices() : [])
+    .filter((v) => /^en/i.test(v.lang));
   function pickVoice() {
-    const voices = speechSynthesis.getVoices();
-    const prefs = [/Ryan.*Natural/i, /Thomas.*Natural/i, /Google UK English Male/i, /Daniel/i, /George/i, /en-GB/i];
-    for (const p of prefs) {
-      const v = voices.find((v) => p.test(v.name) || p.test(v.lang));
+    const all = englishVoices();
+    const chosen = store.get("jarvis-voice");
+    const picked = chosen && all.find((v) => v.voiceURI === chosen);
+    if (picked) return picked;
+    for (const p of MALE) {
+      const v = all.find((v) => p.test(v.name) || p.test(v.voiceURI));
       if (v) return v;
     }
-    return voices.find((v) => /^en/i.test(v.lang)) || null;
+    return all.find((v) => /en[-_]GB/i.test(v.lang)) || all[0] || null;
   }
-  if ("speechSynthesis" in window) {
-    speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); };
+  function fillVoices() {
+    const sel = $("voice-pick"), keep = store.get("jarvis-voice") || "";
+    sel.replaceChildren(new Option("AUTO", ""));
+    for (const v of englishVoices()) sel.append(new Option(`${v.name} · ${v.lang}`.slice(0, 60), v.voiceURI));
+    sel.value = keep;
+    if (sel.value !== keep) sel.value = "";
     voice = pickVoice();
   }
+  if ("speechSynthesis" in window) {
+    speechSynthesis.onvoiceschanged = fillVoices;
+    fillVoices();
+  }
+  $("voice-pick").addEventListener("change", (e) => {
+    store.set("jarvis-voice", e.target.value);
+    voice = pickVoice();
+    stopSpeaking();
+    enqueueSpeech("Huxley here. How does this voice sound?");
+  });
 
   // Speech is queued sentence by sentence, so Huxley starts talking while
   // Claude is still writing the rest of the reply.
@@ -277,7 +301,7 @@
     $("caption").textContent = text;
     if (!$("voice-on").checked || !("speechSynthesis" in window)) return;
     const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
+    if (voice) { u.voice = voice; u.lang = voice.lang; }
     u.rate = 1.04; u.pitch = 0.9;
     speechPending++;
     u.onstart = () => { pauseRecognitionForSpeech(true); setState("speaking"); };
@@ -474,6 +498,7 @@
         $("link-telegram").classList.toggle("on", ev.telegram);
         $("telegram-status").textContent = ev.telegram_status || "";
         $("link-phone").classList.toggle("on", ev.phone);
+        $("link-google").classList.toggle("on", !!ev.google);
         $("call-me").disabled = !ev.phone;
         $("model-name").textContent = ev.model;
         if (ev.dashboard) renderDashboard(ev.dashboard);
@@ -567,6 +592,8 @@
   }
   function renderDashboard(d) {
     renderRain(d.rain_hours);
+    $("dash-bridge").hidden = !d.bridge;
+    $("dash-bridge").textContent = d.bridge ? "BRIDGE ▸ " + d.bridge : "";
     $("dash-weather").textContent = d.weather || "--";
     fillList("dash-upcoming", d.upcoming, "No reminders");
     fillList("dash-todo", d.todo, "Nothing on the list");
@@ -582,6 +609,9 @@
     show_map: "Bringing up the map.", run_protocol: "Running it now.", system_status: "One moment.",
     look_at_screen: "Let me have a look.", get_calendar: "Checking your calendar.",
     read_clipboard: "Let me see what you copied.", find_files: "Searching your files.",
+    border_wait: "Checking the bridge.", drive_time: "Checking the traffic.",
+    check_email: "Checking your inbox.", read_email: "Reading it now.",
+    draft_email: "Drafting that now.", search_docs: "Searching your documents.",
   };
   function turnOf(ev) { return turns[ev.turn] || (turns[ev.turn] = { buf: "", text: "", spoke: false, el: null }); }
   function onPartial(ev) {

@@ -24,6 +24,7 @@
     <ul class="links">
       <li><span class="dot" id="link-core"></span>CORE <em id="model-name"></em></li>
       <li><span class="dot" id="link-telegram"></span>TELEGRAM <em id="telegram-status"></em></li>
+      <li><span class="dot" id="link-google"></span>GOOGLE</li>
       <li><span class="dot" id="link-phone"></span>PHONE</li>
     </ul>
   </header>
@@ -46,6 +47,7 @@
         <p class="dash" id="dash-weather">--</p>
         <div class="rainbars" id="dash-rain" role="img" aria-label="Chance of rain over the next hours"></div>
         <p class="small" id="dash-rain-note"></p>
+        <p class="small bridge" id="dash-bridge" hidden></p>
       </section>
       <section class="module" data-pane="status">
         <h2>&gt; SYSTEM</h2>
@@ -107,6 +109,9 @@
       <label class="toggle" title="After answering, keep listening for a follow-up"><input type="checkbox" id="convo-on" checked>CONVO</label>
       <label class="toggle desk-only" title="Listen continuously for the assistant's name"><input type="checkbox" id="always-listen">WAKE</label>
       <label class="toggle" title="Speak replies aloud"><input type="checkbox" id="voice-on" checked>VOICE</label>
+      <label class="toggle" title="Huxley's voice on this device">VOX
+        <select id="voice-pick" class="pause-select voice-select"><option value="">AUTO</option></select>
+      </label>
       <label class="toggle" title="How long a pause means you've finished talking">WAIT
         <select id="pause-length" class="pause-select">
           <option value="1500">1.5S</option>

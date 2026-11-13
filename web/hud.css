@@ -274,3 +274,5 @@ body.remote #pair-btn { display: none; }
 @media (max-width: 700px) {
   body[data-tab="day"] .grid .module.grow, body[data-tab="status"] .grid .module.grow { flex: 0 0 auto; }
 }
+.voice-select { max-width: 170px; }
+.bridge { margin: 4px 0 0; }

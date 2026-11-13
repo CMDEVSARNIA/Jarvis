@@ -63,6 +63,10 @@ class Settings:
     nudges: bool = _env("NUDGES", "true").lower() != "false"
     talk_hotkey: str = _env("TALK_HOTKEY", "ctrl+alt+space")  # blank = off
     calendar_url: str = _env("CALENDAR_ICS_URL")         # private iCal link (a secret)             # e.g. America/Toronto; blank = this computer's
+    # Traffic: border waits need nothing; drive times need a free TomTom key.
+    border_crossing: str = _env("BORDER_CROSSING")      # e.g. Blue Water Bridge; blank = off
+    commute_to: str = _env("COMMUTE_TO")                # usual destination, e.g. "Port Huron, MI"
+    tomtom_key: str = _env("TOMTOM_API_KEY")
     # Needed only for a personal/service-account key that isn't scoped to one workspace.
     workspace_id: str = _env("ANTHROPIC_WORKSPACE_ID")
 

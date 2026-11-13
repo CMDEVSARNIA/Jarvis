@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Huxley: Google, Traffic and Voice Setup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  @page { size: letter; margin: 0; }
+  :root { --bg: #040805; --panel: #07110a; --deep: #030703; --line: #1d5c33; --fg: #4dff88; --dim: #39c56c;
+          --faint: #1f7a44; --text: #c8ffd9; --amber: #ffcf5c; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 8.5in; height: 11in; padding: 0.55in 0.6in 0.5in; position: relative; overflow: hidden; background: var(--bg);
+          page-break-after: always; display: flex; flex-direction: column; }
+  .page:last-child { page-break-after: auto; }
+  .page::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+                 background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 3px); }
+  .top { display: flex; justify-content: space-between; align-items: baseline; border: 2px solid var(--line); background: var(--panel);
+         padding: 6px 14px; margin-bottom: 18px; }
+  .brand { font-family: VT323, monospace; font-size: 28px; color: var(--fg); letter-spacing: .08em; text-shadow: 0 0 6px rgba(77,255,136,.45); }
+  .crumb { font-size: 10px; letter-spacing: .26em; color: var(--dim); text-transform: uppercase; }
+  h1 { font-family: VT323, monospace; font-weight: 400; font-size: 46px; line-height: 1; color: var(--fg); margin: 0 0 6px;
+       text-transform: uppercase; text-shadow: 0 0 10px rgba(77,255,136,.5); }
+  h2 { font-size: 12px; letter-spacing: .26em; color: var(--dim); text-transform: uppercase; margin: 16px 0 8px; font-weight: 500; }
+  .lead { color: var(--dim); font-size: 12px; line-height: 1.6; margin: 0 0 10px; }
+  p { font-size: 11.5px; line-height: 1.6; margin: 0 0 6px; }
+  b { color: var(--fg); font-weight: 600; }
+  code { color: var(--fg); background: var(--deep); border: 1px solid var(--line); padding: 0 4px; font-size: 11px; }
+  ol.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; counter-reset: s; }
+  ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 10px; border: 1px solid var(--line);
+                  background: var(--panel); padding: 8px 12px; font-size: 11.5px; line-height: 1.55; }
+  ol.steps > li::before { content: counter(s, decimal-leading-zero); font-family: VT323, monospace; font-size: 26px; line-height: .9; color: var(--fg); }
+  ol.steps > li.start { counter-reset: s 6; }
+  .sub { display: block; color: var(--dim); font-size: 10.5px; margin-top: 2px; }
+  .path { color: var(--fg); }
+  .note { border: 1px solid var(--amber); color: var(--amber); padding: 8px 12px; font-size: 11px; line-height: 1.55; margin: 10px 0; }
+  .note b { color: var(--amber); }
+  .ok { border: 2px solid var(--fg); padding: 9px 13px; font-size: 11.5px; line-height: 1.55; margin-top: 10px; background: rgba(77,255,136,.06); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { border: 1px solid var(--line); background: var(--panel); padding: 10px 12px; font-size: 11px; line-height: 1.55; }
+  .card h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .2em; color: var(--fg); font-weight: 600; text-transform: uppercase; }
+  .say { color: var(--fg); }
+  .say::before { content: "▸ "; color: var(--faint); }
+  table { width: 100%; border-collapse: collapse; font-size: 10.8px; }
+  td { border-bottom: 1px dashed var(--line); padding: 6px 6px 6px 0; vertical-align: top; line-height: 1.5; }
+  td:first-child { color: var(--fg); width: 38%; }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 9.5px; letter-spacing: .2em; color: var(--faint);
+          border-top: 1px solid var(--line); padding-top: 8px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ PAGE 1 -->
+<section class="page">
+  <div class="top"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">Google setup · part 1 of 2</span></div>
+  <h1>&gt; Connect Google</h1>
+  <p class="lead">Lets Huxley read your calendar and add or change events directly, read your Gmail and save
+    reply <b>drafts</b>, and search your Google Docs. About 15 minutes, once, on the laptop. Free: no card needed.</p>
+
+  <h2>Part 1 · Your own Google "app" for Huxley</h2>
+  <ol class="steps">
+    <li><div>Go to <b>console.cloud.google.com</b> and sign in with the Google account Huxley should use.
+      <span class="sub">Accept the terms if asked. Ignore any "free trial" or billing offers: none of this needs billing.</span></div></li>
+    <li><div>Make a project: click the <b>project picker</b> at the top → <b>New project</b> → name it <b>Huxley</b> → <b>Create</b>.
+      <span class="sub">Then make sure "Huxley" is shown in the project picker at the top.</span></div></li>
+    <li><div>Switch on three services: <span class="path">☰ menu → APIs &amp; Services → Library</span>. Search for each, open it, press <b>Enable</b>:
+      <span class="sub"><b>Google Calendar API</b> · <b>Gmail API</b> · <b>Google Drive API</b></span></div></li>
+    <li><div>Set up the sign-in screen: <span class="path">☰ → Google Auth Platform</span> (older name: <i>OAuth consent screen</i>) → <b>Get started</b>.
+      <span class="sub">App name <b>Huxley</b> · support email: yours → Next · Audience: <b>External</b> → Next · contact email: yours → Next · tick agree → <b>Create</b>.</span></div></li>
+    <li><div>Stop the sign-in expiring every week: <span class="path">Google Auth Platform → Audience → Publish app → Confirm</span>.
+      <span class="sub">Status becomes "In production". You don't need Google's verification for your own use; you'll just see a warning when signing in (step 8).</span></div></li>
+    <li><div>Make Huxley's key: <span class="path">Google Auth Platform → Clients → Create client</span> → Application type <b>Desktop app</b> → name <b>Huxley</b> → <b>Create</b>.
+      <span class="sub">A box shows the <b>Client ID</b> and <b>Client secret</b>. Copy both into Notepad now (or press <b>Download JSON</b>): Google may not show the secret again.</span></div></li>
+  </ol>
+
+  <div class="note"><b>Keep the Client secret private</b>, like a password. Don't paste it into chats or emails;
+    you'll paste it only into Huxley's own window in step 7.</div>
+
+  <div class="foot"><span>Huxley · personal assistant</span><span>Google setup</span></div>
+</section>
+
+<!-- ============================================================ PAGE 2 -->
+<section class="page">
+  <div class="top"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">Google setup · part 2 of 2</span></div>
+  <h1>&gt; Sign Huxley in</h1>
+
+  <h2>Part 2 · Connect (2 minutes)</h2>
+  <ol class="steps">
+    <li class="start"><div>In the Huxley folder, double-click <b>connect-google.bat</b>. Paste the <b>Client ID</b> (Ctrl+V, Enter), then the
+      <b>Client secret</b> (Ctrl+V, Enter: nothing shows while pasting, that's normal).</div></li>
+    <li><div>Your browser opens Google's sign-in. Pick your account. On <b>"Google hasn't verified this app"</b> click
+      <b>Advanced</b> → <b>Go to Huxley (unsafe)</b>. That warning is about your own app, which only you use.</div></li>
+    <li><div><b>Tick every box</b> (calendar, Gmail, Drive) → <b>Continue</b>. The page says <b>"Huxley is connected to Google"</b>.
+      <span class="sub">The black window lists what Huxley can now do. An unticked line means you missed a box: run connect-google.bat again.</span></div></li>
+  </ol>
+
+  <div class="ok"><b>Done when</b> the <b>GOOGLE</b> light in the top bar of Huxley's screen turns on (within a few seconds,
+    no restart needed). Ask: <span class="say">What's on my calendar tomorrow?</span></div>
+
+  <h2>Things to try</h2>
+  <div class="grid2">
+    <div class="card"><h3>Calendar</h3>
+      <p class="say">Add dentist Friday at 3pm</p>
+      <p class="say">Move my dentist appointment to 4</p>
+      <p class="say">Cancel tomorrow's lunch</p>
+      <p>Huxley adds events straight away, but asks you to say yes before moving or deleting one.</p></div>
+    <div class="card"><h3>Email</h3>
+      <p class="say">Anything important in my email today?</p>
+      <p class="say">Read me the one from the bank</p>
+      <p class="say">Draft a reply saying Friday works</p>
+      <p>Drafts wait in <b>Gmail → Drafts</b>. Huxley has no way to send email: you send it.</p></div>
+    <div class="card"><h3>Documents</h3>
+      <p class="say">Find my notes about the trip</p>
+      <p class="say">What did I write about the budget?</p>
+      <p>Searches Google Docs, Sheets and Slides. Read-only.</p></div>
+    <div class="card"><h3>Safety built in</h3>
+      <p>Huxley treats text in emails and documents as <b>information, never instructions</b>, so a sneaky email can't make it do things.</p>
+      <p>To disconnect: <b>myaccount.google.com/permissions</b> → Huxley → <b>Remove access</b>.</p></div>
+  </div>
+
+  <div class="foot"><span>Huxley · personal assistant</span><span>Google setup</span></div>
+</section>
+
+<!-- ============================================================ PAGE 3 -->
+<section class="page">
+  <div class="top"><span class="brand">H.U.X.L.E.Y.</span><span class="crumb">Traffic · voice · fixes</span></div>
+  <h1>&gt; Traffic &amp; voice</h1>
+
+  <h2>Border waits: nothing to set up</h2>
+  <p>On the next start Huxley asks which crossing you use (press Enter for <b>Blue Water Bridge</b>). Live waits in both directions
+    appear as a <b>BRIDGE</b> line in the ATMOS panel and in your morning briefing. Ask: <span class="say">How's the bridge?</span></p>
+
+  <h2>Drive times with traffic: free TomTom key (optional, 5 minutes)</h2>
+  <ol class="steps" style="counter-reset: s">
+    <li><div>Go to <b>developer.tomtom.com</b> → <b>Register</b> (free, no card) → confirm your email.</div></li>
+    <li><div>In the <b>Dashboard</b>, open <b>Keys</b> and copy your key (one is made for you).</div></li>
+    <li><div>Huxley asks for it once on its next start ("Free TomTom key…"): Ctrl+V, Enter. Also asked: your usual commute destination.
+      <span class="sub">Missed it? Run <code>.venv\Scripts\python -m jarvis.configure</code> in the Huxley folder; it's under "Travel".</span></div></li>
+  </ol>
+  <p style="margin-top:8px">Ask: <span class="say">How long to drive to Port Huron?</span> · <span class="say">How's my commute?</span></p>
+
+  <h2>Huxley's voice on your phone</h2>
+  <p>Tap <b>VOX</b> at the bottom of Huxley's screen and pick a voice; Huxley says a test line. Your choice is remembered on that device.
+    If every choice sounds the same (Samsung phones often do this), set the phone's own voice:</p>
+  <p><span class="path">Settings → search "Text-to-speech" → Preferred engine: <b>Speech Services by Google</b> → ⚙ → Install voice data →
+    English (United Kingdom)</span> → try the voices and pick a male one. Then reopen Huxley.</p>
+
+  <h2>If something goes wrong</h2>
+  <table>
+    <tr><td>"Access blocked: Huxley has not completed the Google verification process"</td><td>Step 5 wasn't done (the app is still in Testing). Publish it, then run connect-google.bat again.</td></tr>
+    <tr><td>"Error 400: redirect_uri_mismatch"</td><td>The client isn't a <b>Desktop app</b>. Make a new client (step 6) as Desktop app.</td></tr>
+    <tr><td>"That Google API isn't switched on"</td><td>Enable it in step 3, wait a minute, ask again.</td></tr>
+    <tr><td>"Google sign-in has expired"</td><td>Run connect-google.bat again (press Enter to keep the saved Client ID).</td></tr>
+    <tr><td>"wasn't given Gmail/Docs access"</td><td>A box wasn't ticked. Run connect-google.bat and tick every box.</td></tr>
+  </table>
+
+  <div class="foot"><span>Huxley · personal assistant</span><span>Traffic and voice</span></div>
+</section>
+
+</body>
+</html>

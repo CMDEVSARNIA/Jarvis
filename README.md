@@ -72,6 +72,17 @@ tray icon (Open, Check for updates, Restart, Start with Windows, Open log, Quit)
 become Windows notifications when the Huxley window is closed. A Huxley desktop shortcut is
 created on first run. `start-huxley.bat --console` keeps the old console window.
 
+## Google, email, traffic
+
+- **Google** (`connect-google.bat`, guide: `docs/Huxley-Google-Setup.pdf`): calendar read/add/change/
+  delete (Huxley confirms before changing or deleting), Gmail read + **drafts only** (no send tool),
+  Google Docs/Drive search and read. Uses your own Google Cloud "Desktop app" client; the sign-in is
+  saved in `data/google_token.json`. Email and document text is passed to Claude marked as
+  untrusted information. Without Google, the calendar falls back to the read-only iCal link.
+- **Border waits** (`BORDER_CROSSING`, default Blue Water Bridge): live CBP (into the US) and CBSA
+  (into Canada) feeds, no key. Shown as BRIDGE in the HUD and in the morning briefing.
+- **Drive times** (`TOMTOM_API_KEY`, free tier; `COMMUTE_TO` for the briefing): live traffic.
+
 ## On your phone
 
 The same green HUD runs on an Android phone, as an installable app with its own icon. It

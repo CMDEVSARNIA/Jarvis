@@ -1,8 +1,8 @@
-"""Calendar via your calendar's private iCal ("secret address") link, read-only, with
-no account linking. Works with Google Calendar, Outlook and Apple iCloud.
-
-Adding an event opens a pre-filled event in your calendar for you to Save, so
-Huxley can never change your calendar without you.
+"""Calendar. Two ways in:
+- Google connected (connect-google.bat): read, add, change and delete events directly.
+- Otherwise your calendar's private iCal ("secret address") link: read-only. Works with
+  Google Calendar, Outlook and Apple iCloud. Adding an event then opens a pre-filled
+  event for you to Save.
 """
 
 from __future__ import annotations
@@ -23,7 +23,8 @@ CACHE_SECONDS = 600
 
 
 def configured() -> bool:
-    return bool(settings.calendar_url)
+    from . import google_tools
+    return bool(settings.calendar_url) or google_tools.calendar_ready()
 
 
 def provider() -> str:
@@ -81,6 +82,14 @@ def _parse(data: bytes, start: datetime, end: datetime) -> list[dict]:
 
 
 async def events_between(start: datetime, end: datetime) -> list[dict]:
+    from . import google_tools
+    if google_tools.calendar_ready():
+        try:
+            return await google_tools.events_between(start, end)
+        except Exception as exc:
+            if not settings.calendar_url:
+                raise
+            log.warning("Google calendar unavailable (%s); using the iCal link", type(exc).__name__)
     data = await _fetch()
     return await asyncio.to_thread(_parse, data, start, end)
 
@@ -94,8 +103,8 @@ def describe(ev: dict) -> str:
 
 async def get_calendar(start_date: str, days: int) -> str:
     if not configured():
-        return ("No calendar connected. The owner can add their calendar's secret iCal link "
-                "with the settings tool.")
+        return ("No calendar connected. The owner can connect Google with connect-google.bat, or "
+                "add their calendar's secret iCal link with Huxley's setup.")
     try:
         first = date.fromisoformat(start_date) if start_date.strip() else local_now().date()
     except ValueError:
@@ -106,6 +115,9 @@ async def get_calendar(start_date: str, days: int) -> str:
         found = await events_between(start, start + timedelta(days=days))
     except ImportError:
         return "Calendar support needs new components; restart Huxley to install them."
+    except google_tools_error() as exc:
+        from .google_auth import friendly
+        return friendly(exc)
     except httpx.HTTPStatusError as exc:
         return f"The calendar link was refused (HTTP {exc.response.status_code}). It may have been reset."
     except httpx.HTTPError as exc:
@@ -115,12 +127,28 @@ async def get_calendar(start_date: str, days: int) -> str:
         return f"Couldn't read the calendar ({type(exc).__name__})."
     if not found:
         return f"Nothing on the calendar for {days} day(s) from {first:%a %d %b}."
-    return "\n".join(describe(e) for e in found)
+    return "\n".join(describe(e) + (f" [id {e['id']}]" if e.get("id") else "") for e in found)
+
+
+def google_tools_error() -> type:
+    from .google_auth import NotConnected
+    return NotConnected
 
 
 async def add_calendar_event(title: str, start: str, end: str, location: str) -> str:
-    """Build a pre-filled event for the owner to Save (opens in the browser)."""
+    """Add the event directly when Google is connected; otherwise open a pre-filled
+    event for the owner to Save."""
+    from . import google_tools
     from .tools import open_website
+
+    if google_tools.calendar_ready():
+        try:
+            return await google_tools.add_event(title, start, end, location)
+        except ValueError as exc:
+            return str(exc)
+        except Exception as exc:
+            from .google_auth import friendly
+            return friendly(exc) + " Nothing was added."
 
     try:
         s = datetime.fromisoformat(start)

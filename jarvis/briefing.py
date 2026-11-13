@@ -13,7 +13,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-from . import calendar_feed, memory, reminders, weather
+from . import calendar_feed, google_auth, google_tools, memory, reminders, traffic, weather
 from .config import DATA_DIR, local_now, settings
 
 log = logging.getLogger("jarvis.briefing")
@@ -21,7 +21,8 @@ STATE_FILE = DATA_DIR / "state.json"
 
 _lock = asyncio.Lock()
 _greeted = False
-dashboard: dict = {"weather": "", "upcoming": [], "todo": [], "today": [], "memory": [], "rain_hours": []}
+dashboard: dict = {"weather": "", "upcoming": [], "todo": [], "today": [], "memory": [], "rain_hours": [],
+                   "bridge": ""}
 
 
 def _state() -> dict:
@@ -52,6 +53,16 @@ async def _gather() -> dict:
     lists = reminders.all_lists()
     data["to_do"] = lists.get("to-do") or lists.get("todo") or []
     data["other_lists"] = {k: len(v) for k, v in lists.items() if k not in ("to-do", "todo") and v}
+    if settings.border_crossing:
+        try:
+            data["border_crossing"] = await traffic.border_wait("")
+        except Exception as exc:
+            data["border_crossing"] = f"unavailable ({type(exc).__name__})"
+    if settings.commute_to and settings.tomtom_key:
+        data["commute"] = await traffic.drive_time("", "")
+    if google_auth.connected() and google_auth.has("gmail_read"):
+        # Senders and subjects only; the owner can ask for more.
+        data["unread_email_last_day"] = await google_tools.check_email("is:unread in:inbox newer_than:1d", 8)
     return data
 
 
@@ -108,7 +119,7 @@ def _briefing_due(now: datetime) -> bool:
 
 async def run() -> None:
     """Background loop: scheduled briefing, and refreshing the HUD panels."""
-    last_weather = datetime.min
+    last_weather = last_bridge = datetime.min
     while True:
         now = local_now()
         try:
@@ -118,6 +129,9 @@ async def run() -> None:
                 dashboard["weather"] = await weather.current_summary()
                 dashboard["rain_hours"] = await weather.hourly_outlook(8)
                 last_weather = now
+            if now - last_bridge > timedelta(minutes=10) and settings.border_crossing:
+                dashboard["bridge"] = await traffic.bridge_summary()
+                last_bridge = now
             dashboard["upcoming"] = reminders.upcoming(limit=3)
             lists = reminders.all_lists()
             dashboard["todo"] = (lists.get("to-do") or lists.get("todo") or [])[:5]
