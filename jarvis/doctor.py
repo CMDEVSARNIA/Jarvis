@@ -120,6 +120,14 @@ def check_phone() -> None:
             line("reachable by Twilio", f"NO ({type(exc).__name__}) - start Huxley first, then rerun")
 
 
+def check_google() -> None:
+    from . import google_auth
+
+    section("Google (calendar, Gmail, Docs)")
+    for label, value in google_auth.self_test():
+        line(label, value)
+
+
 def main() -> None:
     print("Huxley connection checkup (safe to share)")
     section("System")
@@ -146,6 +154,7 @@ def main() -> None:
 
     check_telegram()
     check_phone()
+    check_google()
 
     client = anthropic.Anthropic(default_headers=claude_headers())
     section("Step 1: can we reach the API and see the model?")

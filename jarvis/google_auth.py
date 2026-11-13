@@ -14,6 +14,7 @@ read Gmail + save DRAFTS (it has no tool that sends email), and read Docs/Drive.
 from __future__ import annotations
 
 import base64
+import html
 import hashlib
 import json
 import os
@@ -37,6 +38,25 @@ SCOPES = {
     "docs": "https://www.googleapis.com/auth/drive.readonly",
 }
 RECONNECT = "Double-click connect-google.bat in the Huxley folder to reconnect Google."
+
+
+REFRESH_ERRORS = {
+    "invalid_grant": ("Google sign-in has expired or was cancelled (apps left in Testing expire "
+                      "after 7 days). " + RECONNECT),
+    "invalid_client": ("Google says the Client ID or Client secret is wrong, or that client was "
+                       "deleted. Run connect-google.bat, type the Client ID again when asked, and "
+                       "paste the secret carefully."),
+    "deleted_client": "That Google client was deleted. Create a new Desktop app client and run connect-google.bat.",
+    "unauthorized_client": ("Google won't let this client sign in this way. Make sure the client "
+                            "type is 'Desktop app', then run connect-google.bat."),
+}
+
+
+def _error_code(r: httpx.Response) -> str:
+    try:
+        return str(r.json().get("error", ""))
+    except ValueError:
+        return ""
 
 
 class NotConnected(Exception):
@@ -87,8 +107,7 @@ async def access_token(scope: str) -> str:
             "client_id": saved["client_id"], "client_secret": saved["client_secret"],
             "refresh_token": saved["refresh_token"], "grant_type": "refresh_token"})
     if r.status_code in (400, 401):
-        # invalid_grant: revoked, password changed, or a "Testing" app's 7-day limit.
-        raise NotConnected("Google sign-in has expired. " + RECONNECT)
+        raise NotConnected(REFRESH_ERRORS.get(_error_code(r), "Google refused the saved sign-in. " + RECONNECT))
     r.raise_for_status()
     data = r.json()
     _token.update(access=data["access_token"], expires=time.time() + data.get("expires_in", 3600))
@@ -152,27 +171,48 @@ def _ask_client() -> tuple[str, str]:
     return cid, secret
 
 
-def _wait_for_code(state: str, timeout: int = 300) -> tuple[str, int, object]:
-    """A one-off local web server on 127.0.0.1 that receives Google's redirect."""
+def _exchange(cid: str, secret: str, code: str, verifier: str, redirect: str) -> tuple[bool, str, dict]:
+    """Swap Google's one-time code for a lasting sign-in. Returns (ok, message, token data)."""
+    try:
+        r = httpx.post(TOKEN_URL, timeout=30, data={
+            "client_id": cid, "client_secret": secret, "code": code, "code_verifier": verifier,
+            "redirect_uri": redirect, "grant_type": "authorization_code"})
+    except httpx.HTTPError as exc:
+        return False, f"Couldn't reach Google to finish signing in ({type(exc).__name__}).", {}
+    if r.status_code != 200:
+        err = _error_code(r) or str(r.status_code)
+        hint = REFRESH_ERRORS.get(err, "Check the Client ID and secret, then try again.")
+        return False, f"Google refused to finish the sign-in ({err}). {hint}", {}
+    data = r.json()
+    if not data.get("refresh_token"):
+        return False, "Google didn't return a lasting sign-in. Run connect-google.bat again.", {}
+    return True, "", data
+
+
+def _receive(state: str, finish) -> tuple[int, object, dict]:
+    """A one-off web server on 127.0.0.1 for Google's redirect. It finishes the sign-in
+    before answering, so the browser page shows the real result."""
     import http.server
     import threading
 
-    result: dict = {}
+    outcome: dict = {}
+    done = threading.Event()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):  # noqa: N802
             q = parse_qs(urlparse(self.path).query)
-            if q.get("state", [""])[0] != state:
+            if q.get("state", [""])[0] != state or done.is_set():
                 self.send_response(400)
                 self.end_headers()
                 return
-            result["code"] = q.get("code", [""])[0]
-            result["error"] = q.get("error", [""])[0]
-            ok = bool(result["code"])
-            page = ("<h1>Huxley is connected to Google.</h1><p>You can close this tab.</p>" if ok
-                    else "<h1>Google sign-in was cancelled.</h1><p>Run connect-google.bat again.</p>")
+            code, error = q.get("code", [""])[0], q.get("error", [""])[0]
+            ok, message = finish(code) if code else (False, f"Google sign-in was cancelled ({error or 'no code'}).")
+            outcome.update(ok=ok, message=message)
+            title = "Huxley is connected to Google." if ok else "Huxley is NOT connected yet."
+            detail = ("You can close this tab." if ok else
+                      html.escape(message) + "<br><br>Run connect-google.bat again.")
             body = (f"<html><body style='background:#040805;color:#4dff88;font-family:monospace;"
-                    f"padding:40px'>{page}</body></html>").encode()
+                    f"padding:40px;font-size:18px'><h1>{title}</h1><p>{detail}</p></body></html>").encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
@@ -182,72 +222,108 @@ def _wait_for_code(state: str, timeout: int = 300) -> tuple[str, int, object]:
         def log_message(self, *args):  # keep the console clean (and codes out of it)
             pass
 
-    done = threading.Event()
     server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    return result, server.server_address[1], (server, done, timeout)
+    return server.server_address[1], (server, done), outcome
 
 
-def sign_in() -> int:
-    import webbrowser
-
-    print("\n  Connect Huxley to Google\n  ------------------------\n")
-    cid, secret = _ask_client()
-    state = secrets.token_urlsafe(16)
-    verifier = secrets.token_urlsafe(64)
-    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
-    result, port, (server, done, timeout) = _wait_for_code(state)
-    redirect = f"http://127.0.0.1:{port}/"
-    url = AUTH_URL + "?" + urlencode({
-        "client_id": cid, "redirect_uri": redirect, "response_type": "code",
-        "scope": " ".join(SCOPES.values()), "access_type": "offline", "prompt": "consent",
-        "include_granted_scopes": "true", "state": state,
-        "code_challenge": challenge, "code_challenge_method": "S256"})
-    print("\nOpening Google's sign-in page in your browser...")
-    print("  - Pick your Google account.")
-    print("  - 'Google hasn't verified this app': click Advanced, then 'Go to Huxley'.")
-    print("  - TICK EVERY BOX (calendar, Gmail, Drive), then Continue.\n")
-    print("If the browser doesn't open, copy this address into it:\n" + url + "\n")
-    webbrowser.open(url)
-    if not done.wait(timeout):
-        server.shutdown()
-        print("Timed out waiting for Google (5 minutes). Run connect-google.bat again.")
-        return 1
-    server.shutdown()
-    if not result.get("code"):
-        print(f"Google sign-in didn't finish ({result.get('error') or 'cancelled'}).")
-        return 1
-    r = httpx.post(TOKEN_URL, timeout=30, data={
-        "client_id": cid, "client_secret": secret, "code": result["code"],
-        "code_verifier": verifier, "redirect_uri": redirect, "grant_type": "authorization_code"})
-    if r.status_code != 200:
-        err = r.json().get("error", r.status_code) if r.headers.get("content-type", "").startswith(
-            "application/json") else r.status_code
-        print(f"Google refused the sign-in ({err}). Check the Client ID and secret, then try again.")
-        return 1
-    data = r.json()
-    if not data.get("refresh_token"):
-        print("Google didn't return a lasting sign-in. Run connect-google.bat again.")
-        return 1
+def _save(cid: str, secret: str, data: dict) -> None:
     DATA_DIR.mkdir(exist_ok=True)
     TOKEN_FILE.write_text(json.dumps({
         "client_id": cid, "client_secret": secret, "refresh_token": data["refresh_token"],
         "scope": data.get("scope", ""), "connected": time.strftime("%Y-%m-%d %H:%M")}), encoding="utf-8")
     if os.name != "nt":
         os.chmod(TOKEN_FILE, 0o600)
-    granted = data.get("scope", "").split()
-    print("Connected. Huxley can now:")
+
+
+def self_test() -> list[tuple[str, str]]:
+    """Use the saved sign-in for real: (check, result) lines, safe to share."""
+    import asyncio
+    from datetime import datetime, timedelta
+
+    out = [("Huxley folder", str(ROOT)), ("saved sign-in", "found" if TOKEN_FILE.exists() else "MISSING")]
+    saved = _saved()
+    if not saved.get("refresh_token"):
+        out.append(("result", "Not connected: run connect-google.bat in THIS folder."))
+        return out
+    out.append(("connected on", saved.get("connected", "?")))
+    for key in SCOPES:
+        out.append((f"permission: {key}", "yes" if has(key) else "NO (box not ticked)"))
+
+    async def probe() -> str:
+        if not has("calendar"):
+            await access_token("gmail_read" if has("gmail_read") else "docs")
+            return "sign-in works"
+        start = datetime.now()
+        r = await request("calendar", "GET", "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+                          params={"timeMin": start.astimezone().isoformat(),
+                                  "timeMax": (start + timedelta(days=7)).astimezone().isoformat(),
+                                  "singleEvents": "true", "maxResults": 50})
+        return f"OK - read your calendar ({len(r.json().get('items', []))} events in the next 7 days)"
+    try:
+        out.append(("live test", asyncio.run(probe())))
+    except Exception as exc:
+        out.append(("live test", "FAILED - " + friendly(exc)))
+    return out
+
+
+def sign_in() -> int:
+    import webbrowser
+
+    print("\n  Connect Huxley to Google\n  ------------------------\n")
+    print(f"Huxley folder: {ROOT}\n")
+    cid, secret = _ask_client()
+    state = secrets.token_urlsafe(16)
+    verifier = secrets.token_urlsafe(64)
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+    box: dict = {}
+
+    def finish(code: str) -> tuple[bool, str]:
+        ok, message, data = _exchange(cid, secret, code, verifier, box["redirect"])
+        if ok:
+            _save(cid, secret, data)
+            box["scope"] = data.get("scope", "")
+        return ok, message
+
+    port, (server, done), outcome = _receive(state, finish)
+    box["redirect"] = f"http://127.0.0.1:{port}/"
+    url = AUTH_URL + "?" + urlencode({
+        "client_id": cid, "redirect_uri": box["redirect"], "response_type": "code",
+        "scope": " ".join(SCOPES.values()), "access_type": "offline", "prompt": "consent",
+        "include_granted_scopes": "true", "state": state,
+        "code_challenge": challenge, "code_challenge_method": "S256"})
+    print("\nOpening Google's sign-in page in your browser...")
+    print("  - Pick your Google account.")
+    print("  - 'Google hasn't verified this app': click Advanced, then 'Go to Huxley'.")
+    print("  - TICK EVERY BOX (calendar, Gmail, Drive), then Continue.")
+    print("  Keep this window open until the browser page says connected.\n")
+    print("If the browser doesn't open, copy this address into it:\n" + url + "\n")
+    webbrowser.open(url)
+    if not done.wait(300):
+        server.shutdown()
+        print("Timed out waiting for Google (5 minutes). Run connect-google.bat again.")
+        return 1
+    server.shutdown()
+    if not outcome.get("ok"):
+        print("NOT CONNECTED: " + outcome.get("message", "unknown problem"))
+        return 1
+    granted = box.get("scope", "").split()
     labels = {"calendar": "read and add calendar events", "gmail_read": "read your Gmail",
               "gmail_drafts": "save Gmail drafts (never send)", "docs": "search and read Google Docs"}
-    missing = []
+    print("Signed in. Permissions:")
     for key, scope in SCOPES.items():
-        if scope in granted:
-            print(f"  [x] {labels[key]}")
-        else:
-            missing.append(labels[key])
-    for m in missing:
-        print(f"  [ ] {m}  <- not ticked; run this again and tick it if you want it")
-    print("\nNo restart needed: Huxley picks this up straight away.")
+        mark = "[x]" if scope in granted else "[ ]"
+        note = "" if scope in granted else "  <- not ticked; run this again and tick it if you want it"
+        print(f"  {mark} {labels[key]}{note}")
+    print("\nTesting it for real...")
+    results = self_test()
+    for label, value in results[-1:]:
+        print(f"  {label}: {value}")
+    if "FAILED" in results[-1][1]:
+        return 1
+    print("\nDone. No restart needed: Huxley picks this up within a few seconds.")
+    print("(If Huxley still says Google isn't connected, it's running from a different folder")
+    print(" than the one above, or it's an old copy: right-click the H > Restart Huxley.)")
     return 0
 
 
