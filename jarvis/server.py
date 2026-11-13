@@ -44,6 +44,16 @@ app.include_router(phone.router)
 app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 
 
+@app.middleware("http")
+async def revalidate_static(request: Request, call_next):
+    """Browsers must check with Huxley before reusing a saved screen file (a quick
+    'not modified' answer when nothing changed)."""
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "no-cache")
+    return response
+
+
 def _via_phone_link(scope) -> bool:
     """True for requests that arrived on the phone port, which only `tailscale serve`
     forwards to (it's bound to 127.0.0.1, and no public tunnel points at it)."""
@@ -67,7 +77,11 @@ async def index() -> HTMLResponse:
 
     page = (WEB_DIR / "index.html").read_text(encoding="utf-8")
     theme = settings.hud_theme if settings.hud_theme in ("phosphor", "classic") else "phosphor"
-    page = (page.replace("{{DISPLAY_NAME}}", escape(settings.display_name))
+    # A new address whenever the screen's files change, so browsers can't keep using an
+    # old copy after an update.
+    assets = hashlib.sha256((WEB_DIR / "hud.js").read_bytes() + (WEB_DIR / "hud.css").read_bytes()).hexdigest()[:12]
+    page = (page.replace("{{ASSETS}}", assets)
+                .replace("{{DISPLAY_NAME}}", escape(settings.display_name))
                 .replace("{{NAME}}", escape(settings.assistant_name))
                 .replace("{{THEME}}", theme))
     return HTMLResponse(page, headers={"Cache-Control": "no-store"})
