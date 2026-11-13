@@ -180,6 +180,8 @@ def run_tray(url: str, open_browser: bool) -> None:
                           "--no-browser"], cwd=ROOT, creationflags=0x00000008)  # DETACHED_PROCESS
         desktop.stop_tray()
 
+    desktop.restart_hook = relaunch  # the HUD's RESTART NOW button after an update
+
     def check_updates() -> None:
         message = updater.update()
         desktop.notify("Huxley", message)

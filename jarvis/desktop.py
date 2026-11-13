@@ -25,6 +25,7 @@ SHORTCUT_NAME = "Huxley.lnk"
 LEGACY_SHORTCUT = "Jarvis.lnk"  # from before the rename; replaced automatically
 
 _tray = None  # the pystray icon while running
+restart_hook: Callable[[], None] | None = None  # set in tray mode: restarts Huxley
 
 
 # ------------------------------------------------------------------ hotkey --

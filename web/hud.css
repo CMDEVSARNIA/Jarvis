@@ -276,3 +276,10 @@ body.remote #pair-btn { display: none; }
 }
 .voice-select { max-width: 170px; }
 .bridge { margin: 4px 0 0; }
+
+/* "Updated: restart" banner */
+.update-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 26; display: flex; align-items: center; justify-content: center;
+  gap: 14px; flex-wrap: wrap; padding: 8px 12px; background: var(--fg); color: var(--hl-text); text-shadow: none;
+  font-size: 12px; letter-spacing: 0.2em; font-weight: 600; }
+.update-bar[hidden] { display: none; }
+.update-bar .vbtn { color: var(--hl-text); border-color: var(--hl-text); font-weight: 700; }

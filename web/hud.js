@@ -476,7 +476,10 @@
     if (!token) { $("locked").hidden = false; return; }
     const proto = location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}`);
-    socket.onopen = () => { retry = 0; $("link-core").classList.add("on"); setState(state, false); };
+    socket.onopen = () => {
+      if (restarting) { location.reload(); return; }   // load the updated screen too
+      retry = 0; $("link-core").classList.add("on"); setState(state, false);
+    };
     socket.onclose = (e) => {
       $("link-core").classList.remove("on");
       $("state-label").textContent = "NO LINK";   // e.g. the laptop is asleep
@@ -499,6 +502,7 @@
         $("telegram-status").textContent = ev.telegram_status || "";
         $("link-phone").classList.toggle("on", ev.phone);
         $("link-google").classList.toggle("on", !!ev.google);
+        $("update-bar").hidden = !ev.updated;
         $("call-me").disabled = !ev.phone;
         $("model-name").textContent = ev.model;
         if (ev.dashboard) renderDashboard(ev.dashboard);
@@ -793,6 +797,16 @@
   $("pair-btn").addEventListener("click", pairPhone);
   $("pair-close").addEventListener("click", () => { $("pair-modal").hidden = true; });
   $("pair-modal").addEventListener("click", (e) => { if (e.target.id === "pair-modal") $("pair-modal").hidden = true; });
+
+  // After an update is copied in while Huxley runs, the program must restart to use it.
+  let restarting = false;
+  $("restart-btn").addEventListener("click", async () => {
+    if (remote) { $("update-bar").firstElementChild.textContent = "RESTART HUXLEY FROM THE LAPTOP (TRAY > RESTART)."; return; }
+    const r = await fetch("/api/restart", { method: "POST", headers: { "x-jarvis-token": token } })
+      .then((x) => x.json()).catch(() => ({ ok: false }));
+    if (r.ok) { restarting = true; $("update-bar").firstElementChild.textContent = "RESTARTING… THIS SCREEN RECONNECTS BY ITSELF."; }
+    else $("update-bar").firstElementChild.textContent = (r.detail || "RESTART FROM THE TRAY ICON.").toUpperCase();
+  });
 
   // Installable app on phones: the service worker only shows an offline screen.
   if ("serviceWorker" in navigator && window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {

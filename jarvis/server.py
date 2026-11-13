@@ -4,19 +4,22 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import logging
 import secrets
+import threading
+import time
 from contextlib import asynccontextmanager
 
 import psutil
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import (briefing, events, google_auth, memory, nudges, phone, reminders, tailnet, telegram_bot,
                viewer)
 from .brain import brain
-from .config import WEB_DIR, settings
+from .config import ROOT, WEB_DIR, settings
 
 log = logging.getLogger("jarvis.server")
 
@@ -128,6 +131,43 @@ async def call_me(request: Request) -> dict:
     return {"result": await phone.call_owner("You asked me to call. What can I do for you?")}
 
 
+def _code_hash() -> str:
+    """Fingerprint of Huxley's program files, to spot an update copied in while running."""
+    h = hashlib.sha256()
+    for path in sorted((ROOT / "jarvis").glob("*.py")):
+        try:
+            h.update(path.name.encode() + path.read_bytes())
+        except OSError:
+            pass
+    return h.hexdigest()
+
+
+_code = {"start": _code_hash(), "checked": time.time(), "updated": False}
+
+
+def _code_updated() -> bool:
+    """True once the files on disk differ from the code this copy is running, e.g. after
+    the ZIP was copied over a running Huxley. The HUD then offers a restart."""
+    if not _code["updated"] and time.time() - _code["checked"] > 30:
+        _code["checked"] = time.time()
+        _code["updated"] = _code_hash() != _code["start"]
+    return _code["updated"]
+
+
+@app.post("/api/restart")
+async def restart(request: Request) -> dict:
+    """The HUD's RESTART NOW button (on this laptop, tray mode)."""
+    from . import desktop
+
+    if _via_phone_link(request.scope) or not _authorised(
+            request.headers.get("x-jarvis-token"), request.headers, request.scope):
+        raise HTTPException(status_code=403)
+    if desktop.restart_hook is None:
+        return {"ok": False, "detail": "Close the console window and run start-huxley.bat again."}
+    threading.Thread(target=desktop.restart_hook, daemon=True).start()
+    return {"ok": True}
+
+
 def _status() -> dict:
     return {
         "type": "status",
@@ -137,6 +177,7 @@ def _status() -> dict:
         "telegram_status": telegram_bot.status[1],
         "phone": settings.phone_enabled,
         "google": google_auth.connected(),
+        "updated": _code_updated(),
         "model": settings.model,
         "dashboard": briefing.dashboard,
     }
