@@ -108,8 +108,8 @@ body[data-theme="classic"] .dash { font-size: 17px; }
 body[data-theme="classic"] .caption { font-size: 18px; text-align: center; }
 
 /* log */
-.log { flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.45; padding-right: 4px; }
-.msg { margin: 0 0 8px; }
+.log { flex: 1; overflow-y: auto; overflow-x: hidden; font-size: 13px; line-height: 1.45; padding-right: 4px; }
+.msg { margin: 0 0 8px; overflow-wrap: anywhere; }
 .msg .who { color: var(--dim); margin-right: 6px; }
 .msg.jarvis { color: var(--fg); }
 .msg.user { color: var(--dim); }
